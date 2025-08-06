@@ -919,7 +919,7 @@ class EmailService:
                                            _external=True)
                 except:
                     # Fallback if url_for fails outside request context
-                    base_url = "https://technical-assessment-system.replit.app"
+                    base_url = "https://certification-management-app-updated.onrender.com"
                     upload_url = f"{base_url}/client/upload/{application.application_number}/{upload_token}"
 
                 logger.info(f'Generated upload URL: {upload_url}')
@@ -1031,7 +1031,7 @@ class EmailService:
                                        _external=True)
             except:
                 # Fallback if url_for fails outside request context
-                base_url = "https://technical-assessment-system.replit.app"
+                base_url = "https://certification-management-app-updated.onrender.com"
                 upload_url = f"{base_url}/client/upload/{application.application_number}/{upload_token}"
 
             if requires_upload:
@@ -3938,14 +3938,11 @@ def reset_database():
 if __name__ == '__main__':
     with app.app_context():
         try:
-
-            # Create initial data
             create_initial_data()
-
             logger.info('Application startup completed successfully')
-
         except Exception as e:
             logger.error(f'Startup error: {e}')
 
-    # Run the application
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    # Use the PORT Render provides, fallback to 5000 for local testing
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port, use_reloader=False)
