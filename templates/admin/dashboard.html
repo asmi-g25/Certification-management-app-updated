@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - Certificate Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-3">
+    <h1><i class="fas fa-cog"></i> Administrator Dashboard</h1>
+    
+    <div class="row mt-4">
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4>{{ total_users or 0 }}</h4>
+                            <p>Total Users</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-users fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4>{{ total_groups or 0 }}</h4>
+                            <p>User Groups</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-user-friends fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4>{{ total_stages or 0 }}</h4>
+                            <p>Workflow Stages</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-tasks fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4>System</h4>
+                            <p>Status: Active</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-server fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-history"></i> Recent System Activity</h5>
+                </div>
+                <div class="card-body">
+                    {% if recent_logs %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Timestamp</th>
+                                    <th>User</th>
+                                    <th>Action</th>
+                                    <th>Entity</th>
+                                    <th>IP Address</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for log in recent_logs %}
+                                <tr>
+                                    <td>{{ log.created_at.strftime('%Y-%m-%d %H:%M:%S') if log.created_at else 'N/A' }}</td>
+                                    <td>{{ log.user.full_name if log.user else 'System' }}</td>
+                                    <td>{{ log.action }}</td>
+                                    <td>{{ log.entity_type or 'N/A' }}</td>
+                                    <td>{{ log.ip_address or 'N/A' }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-muted">No recent activity.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-tools"></i> Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <button class="btn btn-primary btn-block mb-2 text-muted" style="cursor: not-allowed;" title="Coming Soon" disabled>
+                    <i class="fas fa-users"></i> Manage Users
+                </button>
+                <button class="btn btn-info btn-block mb-2 text-muted" style="cursor: not-allowed;" title="Coming Soon" disabled>
+                    <i class="fas fa-tasks"></i> Manage Workflow Stages
+                </button>
+                <a href="{{ url_for('admin_setup') }}" class="btn btn-warning btn-block mb-2">
+                    <i class="fas fa-cog"></i> System Setup
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+        
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-info-circle"></i> System Information</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Application Version:</strong> 1.0.0</p>
+                    <p><strong>Database:</strong> PostgreSQL</p>
+                    <p><strong>Environment:</strong> Production</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

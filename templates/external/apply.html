@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Submit Application - Certificate Management</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .form-section { margin-bottom: 2rem; padding: 1.5rem; border: 1px solid #dee2e6; border-radius: 0.375rem; }
+        .section-title { color: #0d6efd; font-weight: bold; margin-bottom: 1rem; text-decoration: underline; }
+        .required { color: red; }
+        body { background-color: #f8f9fa; }
+        .container { background-color: white; padding: 2rem; border-radius: 0.5rem; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    </style>
+</head>
+<body>
+    <div class="container mt-4 mb-4">
+        <div class="text-center mb-4">
+            <h1 class="text-primary">Certificate Application Form</h1>
+            <p class="text-muted">Please fill in all required fields marked with <span class="required">*</span></p>
+        </div>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <form method="POST" action="{{ url_for('submit_application') }}" enctype="multipart/form-data">
+            
+            <!-- Company Information -->
+            <div class="form-section">
+                <h3 class="section-title">COMPANY INFORMATION</h3>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="first_name" class="form-label">First Name: <span class="required">*</span></label>
+                        <input type="text" class="form-control" id="first_name" name="first_name" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="last_name" class="form-label">Last Name: <span class="required">*</span></label>
+                        <input type="text" class="form-control" id="last_name" name="last_name" required>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="company_name" class="form-label">Company Name: <span class="required">*</span></label>
+                        <input type="text" class="form-control" id="company_name" name="company_name" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="trade_name" class="form-label">Trade Name:</label>
+                        <input type="text" class="form-control" id="trade_name" name="trade_name">
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="holding_company" class="form-label">Holding Company:</label>
+                        <input type="text" class="form-control" id="holding_company" name="holding_company">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="company_type" class="form-label">Company Type:</label>
+                        <select class="form-control" id="company_type" name="company_type">
+                            <option value="Private Company">Private Company</option>
+                            <option value="Public Company">Public Company</option>
+                            <option value="Partnership">Partnership</option>
+                            <option value="Sole Proprietorship">Sole Proprietorship</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="comp_reg_number" class="form-label">Company Registration Number:</label>
+                        <input type="text" class="form-control" id="comp_reg_number" name="comp_reg_number">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="comp_vat_number" class="form-label">Company VAT Number:</label>
+                        <input type="text" class="form-control" id="comp_vat_number" name="comp_vat_number">
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="years_established" class="form-label">How long established (years):</label>
+                        <input type="number" class="form-control" id="years_established" name="years_established">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="certification_type" class="form-label">Certification Type: <span class="required">*</span></label>
+                        <select class="form-control" id="certification_type" name="certification_type" required>
+                            <option value="">Select Certification Type</option>
+<option value="Access Control Doors">Access Control Doors</option>
+<option value="Bathroom and Toilet Units">Bathroom and Toilet Units</option>
+<option value="Bridge Deck Joints">Bridge Deck Joints</option>
+<option value="Building System">Building System</option>
+<option value="Building Systems">Building Systems</option>
+<option value="Cold Mix Asphalt">Cold Mix Asphalt</option>
+<option value="Damp-proofing">Damp-proofing</option>
+<option value="Energy Software">Energy Software</option>
+<option value="Everite Nutec Fibre Cement Panel System">Everite Nutec Fibre Cement Panel System</option>
+<option value="Insulation">Insulation</option>
+<option value="Paint Product">Paint Product</option>
+<option value="Plumbing">Plumbing</option>
+<option value="Product">Product</option>
+<option value="Products">Products</option>
+<option value="Propelair Toilet System">Propelair Toilet System</option>
+<option value="Roads Product">Roads Product</option>
+<option value="Roads Products">Roads Products</option>
+<option value="Roofing Product">Roofing Product</option>
+<option value="Roofing Products">Roofing Products</option>
+<option value="Sanitation Product">Sanitation Product</option>
+<option value="Sanitation Products">Sanitation Products</option>
+<option value="Software">Software</option>
+<option value="Tank Product">Tank Product</option>
+<option value="Toilet System">Toilet System</option>
+<option value="Traffic Monitoring Systems">Traffic Monitoring Systems</option>
+<option value="Wall Coating">Wall Coating</option>
+<option value="Wall Coatings">Wall Coatings</option>
+<option value="Walling and Building System">Walling and Building System</option>
+
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Directors Information -->
+            <div class="form-section">
+                <h3 class="section-title">DETAILS OF DIRECTORS/MEMBERS/PARTNERS/OWNERS/TRUSTEES</h3>
+                
+                <!-- Director 1 -->
+                <h5>Director 1:</h5>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="director_1_name" class="form-label">Full Name:</label>
+                        <input type="text" class="form-control" id="director_1_name" name="director_1_name">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="director_1_id" class="form-label">ID/Passport No.:</label>
+                        <input type="text" class="form-control" id="director_1_id" name="director_1_id">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="director_1_address" class="form-label">Residential Address:</label>
+                        <textarea class="form-control" id="director_1_address" name="director_1_address" rows="2"></textarea>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="director_1_date" class="form-label">Date Appointed:</label>
+                        <input type="date" class="form-control" id="director_1_date" name="director_1_date">
+                    </div>
+                </div>
+                
+                <!-- Director 2 -->
+                <h5>Director 2:</h5>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="director_2_name" class="form-label">Full Name:</label>
+                        <input type="text" class="form-control" id="director_2_name" name="director_2_name">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="director_2_id" class="form-label">ID/Passport No.:</label>
+                        <input type="text" class="form-control" id="director_2_id" name="director_2_id">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="director_2_address" class="form-label">Residential Address:</label>
+                        <textarea class="form-control" id="director_2_address" name="director_2_address" rows="2"></textarea>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="director_2_date" class="form-label">Date Appointed:</label>
+                        <input type="date" class="form-control" id="director_2_date" name="director_2_date">
+                    </div>
+                </div>
+                
+                <!-- Director 3 -->
+                <h5>Director 3:</h5>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="director_3_name" class="form-label">Full Name:</label>
+                        <input type="text" class="form-control" id="director_3_name" name="director_3_name">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="director_3_id" class="form-label">ID/Passport No.:</label>
+                        <input type="text" class="form-control" id="director_3_id" name="director_3_id">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="director_3_address" class="form-label">Residential Address:</label>
+                        <textarea class="form-control" id="director_3_address" name="director_3_address" rows="2"></textarea>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="director_3_date" class="form-label">Date Appointed:</label>
+                        <input type="date" class="form-control" id="director_3_date" name="director_3_date">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Contact Details -->
+            <div class="form-section">
+                <h3 class="section-title">CONTACT DETAILS</h3>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="physical_address" class="form-label">Physical Address:</label>
+                        <textarea class="form-control" id="physical_address" name="physical_address" rows="3"></textarea>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="postal_address" class="form-label">Postal Address:</label>
+                        <textarea class="form-control" id="postal_address" name="postal_address" rows="3"></textarea>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="applicant_phone" class="form-label">Telephone No.: <span class="required">*</span></label>
+                        <input type="tel" class="form-control" id="applicant_phone" name="applicant_phone" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="applicant_email" class="form-label">Email Address: <span class="required">*</span></label>
+                        <input type="email" class="form-control" id="applicant_email" name="applicant_email" required>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="company_phone" class="form-label">Company Phone:</label>
+                        <input type="tel" class="form-control" id="company_phone" name="company_phone">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="company_website" class="form-label">Company Website:</label>
+                        <input type="url" class="form-control" id="company_website" name="company_website">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Supporting Documents -->
+            <div class="form-section">
+                <h3 class="section-title">SUPPORTING DOCUMENTS</h3>
+                <div class="mb-3">
+                    <label for="supporting_documents" class="form-label">Supporting Documents: <span class="required">*</span></label>
+                    <input type="file" class="form-control" id="supporting_documents" name="supporting_documents" multiple accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" required>
+                    <div class="form-text">You can upload multiple files. Supported formats: PDF, DOC, DOCX, JPG, PNG (Max 16MB per file)</div>
+                </div>
+                <div id="file-list" class="mt-2"></div>
+            </div>
+            
+            <div class="text-center">
+                <button type="submit" class="btn btn-success btn-lg px-5">Submit Application</button>
+            </div>
+        </form>
+        
+        <div class="text-center mt-4">
+            <a href="{{ url_for('status_check_form') }}" class="btn btn-outline-primary">
+                <i class="fas fa-search"></i> Check Application Status
+            </a>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // File upload preview
+        document.getElementById('supporting_documents').addEventListener('change', function(e) {
+            const fileList = document.getElementById('file-list');
+            fileList.innerHTML = '';
+            
+            if (e.target.files.length > 0) {
+                const title = document.createElement('h6');
+                title.textContent = 'Selected Files:';
+                title.className = 'text-primary mt-3';
+                fileList.appendChild(title);
+                
+                for (let i = 0; i < e.target.files.length; i++) {
+                    const file = e.target.files[i];
+                    const fileItem = document.createElement('div');
+                    fileItem.className = 'text-success';
+                    fileItem.innerHTML = `<i class="fas fa-file"></i> ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
+                    fileList.appendChild(fileItem);
+                }
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,304 @@
+{% extends "base.html" %}
+
+{% block title %}Application {{ application.application_number }} - Certificate Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-3">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="fas fa-file-alt"></i> Application {{ application.application_number }}</h1>
+        <a href="{{ url_for('applications') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Applications
+        </a>
+    </div>
+
+    <div class="row">
+        <!-- Application Details -->
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i class="fas fa-info-circle"></i> Application Details</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Application Number:</strong> {{ application.application_number }}</p>
+                            <p><strong>Applicant Name:</strong> {{ application.applicant_name }}</p>
+                            <p><strong>Email:</strong> {{ application.applicant_email }}</p>
+                            <p><strong>Phone:</strong> {{ application.applicant_phone or 'N/A' }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Company:</strong> {{ application.company.name if application.company else 'N/A' }}</p>
+                            <p><strong>Certificate Type:</strong> {{ application.certificate_type or 'N/A' }}</p>
+                            <p><strong>Current Stage:</strong> 
+                                <span class="badge bg-secondary">{{ application.current_stage.name if application.current_stage else 'N/A' }}</span>
+                            </p>
+                            <p><strong>Status:</strong> 
+                                <span class="badge bg-{% if application.status == 'Completed' %}success{% elif application.status == 'In Progress' %}warning{% else %}primary{% endif %}">
+                                    {{ application.status }}
+                                </span>
+                            </p>
+                            <p><strong>Submitted:</strong> {{ to_sast(application.submitted_at).strftime('%Y-%m-%d %H:%M SAST') if application.submitted_at else 'N/A' }}</p>
+                            <p><strong>Last Updated:</strong> {{ to_sast(application.last_updated).strftime('%Y-%m-%d %H:%M SAST') if application.last_updated else 'N/A' }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Documents Section - FIXED -->
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5><i class="fas fa-file"></i> Documents</h5>
+                    <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#uploadModal">
+                        <i class="fas fa-upload"></i> Upload Document
+                    </button>
+                </div>
+                <div class="card-body">
+                    {% if documents %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Filename</th>
+                                    <th>Type</th>
+                                    <th>Size</th>
+                                    <th>Uploaded</th>
+                                    <th>Source</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for doc in documents %}
+                                <tr>
+                                    <td>
+                                        <i class="fas fa-file"></i> {{ doc.original_filename }}
+                                        {% if doc.description %}
+                                        <br><small class="text-muted">{{ doc.description }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ doc.document_type or 'N/A' }}</td>
+                                    <td>
+                                        {% if doc.file_size %}
+                                        {{ "%.1f"|format(doc.file_size / 1024 / 1024) }} MB
+                                        {% else %}
+                                        N/A
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ to_sast(doc.uploaded_at).strftime('%Y-%m-%d %H:%M SAST') if doc.uploaded_at else 'N/A' }}</td>
+                                    <td>
+                                        {% if doc.uploaded_by_external %}
+                                        <span class="badge bg-info">External</span>
+                                        {% else %}
+                                        <span class="badge bg-success">Internal</span>
+                                        {% if doc.uploaded_by_user %}
+                                        <br><small class="text-muted">{{ doc.uploaded_by_user.full_name }}</small>
+                                        {% endif %}
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('download_document', id=doc.id) }}" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-download"></i> Download
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-3">
+                        <i class="fas fa-file fa-2x text-muted mb-2"></i>
+                        <p class="text-muted">No documents uploaded yet.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Certificates Section -->
+            {% if certificates %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i class="fas fa-certificate"></i> Certificates</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Certificate Number</th>
+                                    <th>Issued Date</th>
+                                    <th>Expiry Date</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for cert in certificates %}
+                                <tr>
+                                    <td>{{ cert.certificate_number }}</td>
+                                    <td>{{ cert.issued_date.strftime('%Y-%m-%d') if cert.issued_date else 'N/A' }}</td>
+                                    <td>{{ cert.expiry_date.strftime('%Y-%m-%d') if cert.expiry_date else 'N/A' }}</td>
+                                    <td>
+                                        <span class="badge bg-{% if cert.status == 'Active' %}success{% else %}secondary{% endif %}">
+                                            {{ cert.status }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if cert.certificate_file %}
+                                        <a href="{{ url_for('download_certificate', id=cert.id) }}" class="btn btn-sm btn-success">
+                                            <i class="fas fa-download"></i> Download
+                                        </a>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Actions and History -->
+        <div class="col-md-4">
+            <!-- Workflow Actions -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i class="fas fa-cogs"></i> Workflow Actions</h5>
+                </div>
+                <div class="card-body">
+                    {% if available_actions %}
+                    <form method="POST" action="{{ url_for('process_application', id=application.id) }}">
+                        <div class="mb-3">
+                            <label for="action" class="form-label">Select Action</label>
+                            <select class="form-control" id="action" name="action" required>
+                                <option value="">Choose an action...</option>
+                                {% for action_value, action_label in available_actions %}
+                                <option value="{{ action_value }}">{{ action_label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="reason" class="form-label">Comments/Reason (Optional)</label>
+                            <textarea class="form-control" id="reason" name="reason" rows="3" placeholder="Add any comments or reasons for this action..."></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-arrow-right"></i> Process Application
+                        </button>
+                    </form>
+                    {% else %}
+                    <p class="text-muted">No actions available for current stage.</p>
+                    {% endif %}
+
+                    <!-- Create Certificate Record Button -->
+                            {% if application.status == 'Completed' and not certificates %}
+                            <div class="mt-3">
+                                <form method="POST" action="{{ url_for('create_certificate_record', id=application.id) }}" class="d-inline">
+                                    <button type="submit" class="btn btn-success" onclick="return confirm('Create certificate record for this application?')">
+                                        <i class="fas fa-certificate"></i> Create Certificate Record
+                                    </button>
+                                </form>
+                                <small class="text-muted d-block mt-1">This will create a certificate record. You can then upload the PDF file from the certificates page.</small>
+                            </div>
+                            {% endif %}
+                </div>
+            </div>
+
+            <!-- Application History -->
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-history"></i> Application History</h5>
+                </div>
+                <div class="card-body">
+                    {% if history %}
+                    <div class="history-timeline">
+                        {% for entry in history %}
+                        <div class="history-item mb-3 p-3" style="background: #f8f9fa; border-left: 4px solid #007bff; border-radius: 0.375rem;">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <h6 class="mb-1 text-primary">{{ entry.to_stage.name if entry.to_stage else 'Unknown Stage' }}</h6>
+                                    <div class="text-muted small">
+                                        <strong>Action:</strong> {{ entry.action }}
+                                        {% if entry.moved_by_user %}
+                                        <br><strong>Processed by:</strong> {{ entry.moved_by_user.full_name }}
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <small class="text-muted">
+                                    {% if entry.created_at %}
+                                        {{ to_sast(entry.created_at).strftime('%B %d, %Y at %I:%M %p SAST') }}
+                                    {% else %}
+                                        N/A
+                                    {% endif %}
+                                </small>
+                            </div>
+                            
+                            {% if entry.from_stage and entry.to_stage %}
+                            <div class="mb-2">
+                                <small class="text-muted">
+                                    <i class="fas fa-arrow-right me-1"></i>
+                                    Moved from <strong>{{ entry.from_stage.name }}</strong> to <strong>{{ entry.to_stage.name }}</strong>
+                                </small>
+                            </div>
+                            {% endif %}
+                            
+                            {% if entry.reason %}
+                            <div class="mt-2 p-2" style="background: #e3f2fd; border-radius: 0.25rem;">
+                                <small class="text-dark">
+                                    <strong>Comments:</strong> {{ entry.reason }}
+                                </small>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-3">
+                        <i class="fas fa-history fa-2x text-muted mb-2"></i>
+                        <p class="text-muted">No history available.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Upload Document Modal -->
+<div class="modal fade" id="uploadModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Upload Document</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('upload_document', id=application.id) }}" enctype="multipart/form-data">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="file" class="form-label">Select File</label>
+                        <input type="file" class="form-control" id="file" name="file" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="document_type" class="form-label">Document Type</label>
+                        <select class="form-control" id="document_type" name="document_type">
+                            <option value="General Document">General Document</option>
+                            <option value="Supporting Document">Supporting Document</option>
+                            <option value="Technical Document">Technical Document</option>
+                            <option value="Legal Document">Legal Document</option>
+                            <option value="Financial Document">Financial Document</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description (Optional)</label>
+                        <textarea class="form-control" id="description" name="description" rows="2" placeholder="Brief description of the document..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Upload Document</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

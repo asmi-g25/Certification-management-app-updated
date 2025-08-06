@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Successful - Certificate Management</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Roboto+Slab:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --steel-blue: #1e40af;
+            --light-steel: #3b82f6;
+            --deep-charcoal: #2d3748;
+            --corporate-white: #ffffff;
+            --light-neutral: #f4f6f8;
+            --success-green: #10b981;
+            --gradient-primary: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+            --gradient-steel: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+            --gradient-light: linear-gradient(135deg, #fafbfc 0%, #f4f6f8 100%);
+            --shadow-lg: 0 10px 15px rgba(45, 55, 72, 0.12), 0 4px 6px rgba(45, 55, 72, 0.06);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--gradient-light);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+        }
+
+        .success-container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .success-card {
+            background: var(--corporate-white);
+            border-radius: 12px;
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .success-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+
+        .success-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+            animation: successPulse 2s infinite;
+        }
+
+        @keyframes successPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .uploaded-files {
+            background: var(--light-neutral);
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        .file-item {
+            display: flex;
+            align-items: center;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+        }
+
+        .file-item:last-child {
+            border-bottom: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="success-container">
+            <div class="success-card">
+                <div class="card-body text-center p-5">
+                    <div class="success-icon">
+                        <i class="fas fa-check" style="font-size: 2rem; color: white;"></i>
+                    </div>
+                    
+                    <h2 style="font-family: 'Roboto Slab', serif; color: var(--deep-charcoal); margin-bottom: 1rem;">
+                        Documents Uploaded Successfully!
+                    </h2>
+                    
+                    <p style="color: var(--success-green); font-size: 1.1rem; margin-bottom: 2rem;">
+                        Your documents have been securely uploaded and are now being processed.
+                    </p>
+                    
+                    <div class="uploaded-files">
+                        <h6><i class="fas fa-check-circle me-2" style="color: var(--success-green);"></i>Uploaded Files:</h6>
+                        {% if uploaded_files %}
+                            {% for file in uploaded_files %}
+                            <div class="file-item">
+                                <i class="fas fa-file me-3" style="color: var(--steel-blue);"></i>
+                                <span>{{ file }}</span>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-muted mb-0">Files uploaded successfully</p>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-info-circle me-2"></i>What happens next?</h6>
+                        <ul class="list-unstyled mb-0 text-start">
+                            <li class="mb-1"><i class="fas fa-check text-success me-2"></i>Documents will be reviewed by our team</li>
+                            <li class="mb-1"><i class="fas fa-envelope text-primary me-2"></i>You'll receive email updates on progress</li>
+                            <li class="mb-0"><i class="fas fa-clock text-warning me-2"></i>Processing typically takes 3-5 business days</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <a href="{{ url_for('status_check_form') }}" class="btn btn-primary me-2">
+                            <i class="fas fa-search me-2"></i>Check Application Status
+                        </a>
+                        <a href="{{ url_for('external_apply') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-home me-2"></i>Return to Homepage
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+
+{% block title %}Stage Management - Certificate Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1><i class="fas fa-list-ol me-2"></i>Stage Management</h1>
+            </div>
+            
+            <div class="row">
+                <!-- Create Stage Form -->
+                <div class="col-lg-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Create New Stage</h5>
+                        </div>
+                        <div class="card-body">
+                            <form method="POST">
+                                {{ form.hidden_tag() }}
+                                
+                                <div class="mb-3">
+                                    {{ form.name.label(class="form-label") }}
+                                    {{ form.name(class="form-control") }}
+                                    {% if form.name.errors %}
+                                        <div class="text-danger small">
+                                            {% for error in form.name.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="mb-3">
+                                    {{ form.stage_number.label(class="form-label") }}
+                                    {{ form.stage_number(class="form-control", step="0.1") }}
+                                    {% if form.stage_number.errors %}
+                                        <div class="text-danger small">
+                                            {% for error in form.stage_number.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <div class="form-text">Use decimals for review stages (e.g., 2.1)</div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        {{ form.is_review_stage(class="form-check-input") }}
+                                        {{ form.is_review_stage.label(class="form-check-label") }}
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    {{ form.parent_stage_id.label(class="form-label") }}
+                                    {{ form.parent_stage_id(class="form-select") }}
+                                    {% if form.parent_stage_id.errors %}
+                                        <div class="text-danger small">
+                                            {% for error in form.parent_stage_id.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="mb-3">
+                                    {{ form.next_stage_id.label(class="form-label") }}
+                                    {{ form.next_stage_id(class="form-select") }}
+                                    {% if form.next_stage_id.errors %}
+                                        <div class="text-danger small">
+                                            {% for error in form.next_stage_id.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="mb-3">
+                                    {{ form.assigned_group_id.label(class="form-label") }}
+                                    {{ form.assigned_group_id(class="form-select") }}
+                                    {% if form.assigned_group_id.errors %}
+                                        <div class="text-danger small">
+                                            {% for error in form.assigned_group_id.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i class="fas fa-plus me-1"></i>Create Stage
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Stages List -->
+                <div class="col-lg-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Existing Stages</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if stages %}
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Stage #</th>
+                                            <th>Name</th>
+                                            <th>Type</th>
+                                            <th>Assigned Group</th>
+                                            <th>Applications</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for stage in stages %}
+                                        <tr>
+                                            <td>
+                                                <span class="badge bg-{{ 'warning' if stage.is_review_stage else 'primary' }}">
+                                                    {{ stage.stage_number }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <strong>{{ stage.name }}</strong>
+                                                {% if stage.parent_stage %}
+                                                <br><small class="text-muted">Parent: {{ stage.parent_stage.name }}</small>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-{{ 'warning' if stage.is_review_stage else 'info' }}">
+                                                    {{ 'Review' if stage.is_review_stage else 'Regular' }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                {{ stage.assigned_group.name if stage.assigned_group else '-' }}
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-secondary">
+                                                    {{ stage.current_applications|length }} active
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <div class="btn-group btn-group-sm">
+                                                    <button class="btn btn-outline-warning" onclick="editStage({{ stage.id }})">
+                                                        <i class="fas fa-edit"></i>
+                                                    </button>
+                                                    {% if stage.current_applications|length == 0 %}
+                                                    <button class="btn btn-outline-danger" onclick="deleteStage({{ stage.id }})">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                    {% endif %}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <div class="text-center py-4">
+                                <i class="fas fa-list-ol fa-3x text-muted mb-3"></i>
+                                <p class="text-muted">No stages created yet</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Workflow Visualization -->
+            {% if stages %}
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-project-diagram me-2"></i>Workflow Overview
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="workflow-container">
+                        {% for stage in stages %}
+                        <div class="workflow-stage {{ 'review-stage' if stage.is_review_stage else 'regular-stage' }}">
+                            <div class="stage-number">{{ stage.stage_number }}</div>
+                            <div class="stage-name">{{ stage.name }}</div>
+                            {% if stage.assigned_group %}
+                            <div class="stage-group">{{ stage.assigned_group.name }}</div>
+                            {% endif %}
+                        </div>
+                        {% if not loop.last %}
+                        <div class="workflow-arrow">
+                            <i class="fas fa-arrow-right"></i>
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function editStage(stageId) {
+    // TODO: Implement stage editing
+    alert('Stage editing - to be implemented');
+}
+
+function deleteStage(stageId) {
+    if (confirm('Are you sure you want to delete this stage?')) {
+        // TODO: Implement stage deletion
+        alert('Stage deletion - to be implemented');
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,152 @@
+✅ Stage 1: New Application
+Trigger: Client submits a new application via the interface.
+
+Performer: Client
+
+Decision: No approval/rejection (submission stage)
+
+Next Step: Move to Stage 2 – Verification of Application Completeness
+
+Notifications:
+
+🔔 Submission: Notify TAO Group and Client
+
+If Rejected: Not applicable
+
+✅ Stage 2: Verification of Application Completeness
+Trigger: Application is received.
+
+Performer: TAO
+
+Decision Paths:
+
+✅ Approved: Application Complete → Move to Stage 3
+
+🔔 Notify TAO Group and Client
+
+❌ Rejected: Application Not Complete → Stay on Stage 2
+
+🔔 Notify TAO Group and Client
+
+📨 Review with Comments Sent To: Client
+
+✅ Stage 3: Admin Fee Request
+Trigger: Application is marked complete.
+
+Performer: TAO
+
+Decision Paths:
+
+✅ Approved: Fee Accepted → Go to Stage 4
+
+🔔 Notify TAO Group and Client
+
+❌ Rejected: Stay on Stage 3
+
+🔔 Notify TAO Group and Client
+
+📨 Sent to: TAO Group
+
+ℹ️ Request Info: Stay on Stage 3
+
+🔔 Notify TAO Group and Client
+
+✅ Stage 4: Admin Invoice Generation
+Trigger: Admin fee is accepted.
+
+Performer: Finance
+
+Decision Paths:
+
+✅ Approved: Invoice Generated → Go to Stage 4.1
+
+🔔 Notify Finance Group and TAO
+
+❌ Rejected: Return to Stage 3
+
+🔔 Finance Group
+
+📨 Sent to: Finance Group
+
+✅ Stage 4.1: Confirmation of Invoice
+Trigger: Finance confirms invoice and sends it to the client.
+
+Performer: Finance
+
+Decision: None (informational stage)
+
+Next Step: Stage 4.2 – Proof of Payment Upload
+
+Notifications: None (invoice goes to client directly)
+
+✅ Stage 4.2: Admin Fee – Proof of Payment
+Trigger: Client uploads payment proof.
+
+Performer: Applicant (Client)
+
+Decision Paths:
+
+✅ Approved: Payment verified → Go to Stage 5
+
+🔔 Notify TAO Group and Finance Group
+
+❌ Rejected: Payment not made → Stay on Stage 4.2
+
+🔔 Notify Finance Group
+
+📨 Sent to: Finance Group
+
+✅ Stage 5: Allocation – Criteria Review (TGL assigns an STA)
+Trigger: Payment is confirmed.
+
+Performer: TGL-TA
+
+Decision Paths:
+
+✅ Approved: Allocated → Go to Stage 6
+
+🔔 Notify TAO Group, TGL-TA, STA
+
+❌ Rejected: Not Allocated → Stay on Stage 5.1
+
+🔔 Notify TAO Group
+
+📨 Sent to: TAO Group
+
+ℹ️ Request Info: Stay on Stage 5.1
+
+🔔 Notify TAO Group
+
+✅ Stage 6: Peer Review – Criteria Review
+Trigger: STA assigned
+
+Performer: TAO
+
+Decision Paths:
+
+✅ Approved → Go to Stage 7
+
+🔔 Notify Technical Services Group
+
+❌ Rejected → Stay on Stage 6
+
+🔔 Notify Technical Services Group
+
+📨 Sent to: STA Group
+
+✅ Stage 7: Approval – Application Criteria Report
+Trigger: Peer Review is complete
+
+Performer: STA
+
+Decision Paths:
+
+✅ Approved → Go to Stage 8
+
+🔔 Notify STA, TAO Group
+
+❌ Rejected → Stay on Stage 7
+
+🔔 Notify Technical Services Group
+
+📨 Sent to: None (this one doesn’t show review with comment)

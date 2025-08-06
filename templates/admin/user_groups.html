@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+
+{% block title %}Manage User Groups - Certificate Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-3">
+    <div class="page-header">
+        <div class="container-fluid">
+            <h1 class="page-title">
+                <i class="fas fa-users-cog me-3" style="color: var(--steel-blue);"></i>
+                Manage User Groups
+            </h1>
+            <p class="page-subtitle">Assign Groups to {{ user.full_name }}</p>
+        </div>
+    </div>
+    
+    <div class="row justify-content-center">
+        <div class="col-xl-10 col-lg-12">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5><i class="fas fa-user-tag me-2"></i>Group Assignment for {{ user.full_name }}</h5>
+                        <span class="badge bg-info">@{{ user.username }}</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6 class="mb-3">
+                                    <i class="fas fa-list-check me-2" style="color: var(--steel-blue);"></i>
+                                    Available Groups
+                                </h6>
+                                <div class="group-selection">
+                                    {% if all_groups %}
+                                        {% for group in all_groups %}
+                                        <div class="form-check mb-3">
+                                            <input class="form-check-input" type="checkbox" 
+                                                   id="group_{{ group.id }}" 
+                                                   name="groups" 
+                                                   value="{{ group.id }}"
+                                                   {% if group.id in current_group_ids %}checked{% endif %}>
+                                            <label class="form-check-label" for="group_{{ group.id }}">
+                                                <div class="group-item">
+                                                    <div class="group-name">{{ group.name }}</div>
+                                                    {% if group.description %}
+                                                    <div class="group-description">{{ group.description }}</div>
+                                                    {% endif %}
+                                                </div>
+                                            </label>
+                                        </div>
+                                        {% endfor %}
+                                    {% else %}
+                                        <div class="text-center py-4">
+                                            <i class="fas fa-users fa-2x text-muted mb-2"></i>
+                                            <p class="text-muted">No groups available</p>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <h6 class="mb-3">
+                                    <i class="fas fa-info-circle me-2" style="color: var(--steel-blue);"></i>
+                                    Group Information
+                                </h6>
+                                <div class="alert alert-info">
+                                    <h6><i class="fas fa-lightbulb me-2"></i>Group Functions:</h6>
+                                    <ul class="mb-0">
+                                        <li><strong>Administrators:</strong> Full system access and user management</li>
+                                        <li><strong>TAO:</strong> Technical Assessment Officers</li>
+                                        <li><strong>Finance:</strong> Payment and invoice management</li>
+                                        <li><strong>TGL: TA:</strong> Technical Group Leader</li>
+                                        <li><strong>STA:</strong> Senior Technical Assessor</li>
+                                        <li><strong>EMTS:</strong> Engineering Management</li>
+                                        <li><strong>TECO:</strong> Technical Committee</li>
+                                        <li><strong>Board:</strong> Board of Directors</li>
+                                        <li><strong>PL:</strong> Project Leader</li>
+                                    </ul>
+                                </div>
+                                
+                                <div class="current-assignments">
+                                    <h6>Current Assignments:</h6>
+                                    {% if current_group_ids %}
+                                        {% for group in all_groups %}
+                                            {% if group.id in current_group_ids %}
+                                                <span class="badge bg-primary me-1 mb-1">{{ group.name }}</span>
+                                            {% endif %}
+                                        {% endfor %}
+                                    {% else %}
+                                        <span class="text-muted">No groups assigned</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <hr>
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('admin_users') }}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Back to Users
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Update Group Assignments
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.group-selection {
+    max-height: 400px;
+    overflow-y: auto;
+    padding: 1rem;
+    background: var(--warm-white);
+    border-radius: 8px;
+    border: 1px solid var(--border-neutral);
+}
+
+.form-check {
+    padding: 0.75rem;
+    border-radius: 6px;
+    transition: background-color 0.2s ease;
+}
+
+.form-check:hover {
+    background-color: rgba(30, 64, 175, 0.05);
+}
+
+.form-check-input:checked ~ .form-check-label {
+    color: var(--steel-blue);
+    font-weight: 600;
+}
+
+.group-item {
+    padding-left: 0.5rem;
+}
+
+.group-name {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+}
+
+.group-description {
+    font-size: 0.8rem;
+    color: var(--text-light);
+    margin-top: 0.25rem;
+}
+
+.current-assignments {
+    background: var(--light-neutral);
+    padding: 1rem;
+    border-radius: 8px;
+    margin-top: 1rem;
+}
+</style>
+
+<script>
+// Select all/none functionality
+document.addEventListener('DOMContentLoaded', function() {
+    // Add select all button
+    const groupSelection = document.querySelector('.group-selection');
+    if (groupSelection) {
+        const selectAllDiv = document.createElement('div');
+        selectAllDiv.className = 'mb-3 pb-3 border-bottom';
+        selectAllDiv.innerHTML = `
+            <button type="button" class="btn btn-sm btn-outline-primary me-2" onclick="selectAllGroups()">
+                <i class="fas fa-check-double me-1"></i>Select All
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="selectNoGroups()">
+                <i class="fas fa-times me-1"></i>Select None
+            </button>
+        `;
+        groupSelection.insertBefore(selectAllDiv, groupSelection.firstChild);
+    }
+});
+
+function selectAllGroups() {
+    document.querySelectorAll('input[name="groups"]').forEach(checkbox => {
+        checkbox.checked = true;
+    });
+}
+
+function selectNoGroups() {
+    document.querySelectorAll('input[name="groups"]').forEach(checkbox => {
+        checkbox.checked = false;
+    });
+}
+</script>
+{% endblock %}

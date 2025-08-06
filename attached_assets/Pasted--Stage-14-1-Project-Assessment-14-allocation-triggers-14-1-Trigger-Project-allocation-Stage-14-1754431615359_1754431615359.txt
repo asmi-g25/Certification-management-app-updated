@@ -1,0 +1,304 @@
+✅ Stage 14.1: Project Assessment (14 allocation triggers 14.1)
+Trigger: Project allocation (Stage 14) is approved.
+
+Performer: TGL-TA & STA
+
+Decision Paths:
+
+✅ Approved → Go to Stages 14.1.1, 14.1.1.1, and 14.1.3 depending on structure
+
+🔔 On Approval: Notify TAO Group, TGL-TA, STA
+
+❌ Rejected → Stay on 14.1
+
+🔔 On Rejection: Notify TAO Group
+
+📨 Sent to: TAO Group
+
+✅ Stage 14.1.1: Draft Project Management Plan (PMP) (14 allocation triggers 14.1.1)
+Trigger: Project assessment is approved.
+
+Performer: TAO
+
+Decision:
+
+✅ Uploaded → Go to 14.1.1.2
+
+🔔 On Approval: Notify TGL-TA Group, STA, TA
+
+❌ Rejected → Stay on 14.1.1
+
+🔔 On Rejection: Notify TGL-TA Group
+
+📨 Sent to: TGL-TA Group
+
+✅ Stage 14.1.1.2: Approved Project Management Plan (PMP)
+Trigger: Draft PMP is uploaded
+
+Performer: STA & Project Leader
+
+Decision Paths:
+
+✅ Approved → Go to Stage 14.1.3
+
+🔔 On Approval: Notify STA & Project Leader Group
+
+❌ Rejected → Stay on 14.1.1.2
+
+🔔 On Rejection: Notify STA Group
+
+📨 Sent to: TGL-TA Group
+
+✅ Stage 14.1.3: Review Project Submission
+Trigger: PMP is approved.
+
+Performer: Project Leader
+
+Decision Paths:
+
+✅ Uploaded → Go to Stage 15.1
+
+🔔 On Approval: Notify SFA Group & Project Leader
+
+❌ Rejected → Stay on 14.1.3
+
+🔔 On Rejection: Notify SFA Group
+
+📨 Sent to: None
+
+✅ Stage 15.1: Peer Review – Draft Certificate
+Trigger: Project is submitted.
+
+Performer: TGL-TA & STA
+
+Decision Paths:
+
+✅ Reviewed → Go to Stage 15.2
+
+🔔 On Approval: Notify Technical Services Group
+
+❌ Rejected → Stay on 15.1
+
+🔔 On Rejection: Notify Technical Services Group
+
+📨 Sent to: None
+
+✅ Stage 15.2: Final Review – Assessment Management (Technical Exco)
+Trigger: Peer review is completed.
+
+Performer: Project Leader
+
+Decision Paths:
+
+✅ Reviewed → Go to 15.3
+
+🔔 On Approval: Notify TGL-TA Group, STA, Project Leader
+
+❌ Rejected → Stay on 15.2
+
+🔔 On Rejection: Notify TGL-TA Group
+
+📨 Sent to: TGL-TA Group
+
+✅ Stage 15.3: Review – EMTS
+Trigger: Final review is completed.
+
+Performer: TAO
+
+Decision Paths:
+
+✅ Reviewed → Go to Stage 16
+
+🔔 On Approval: Notify TGL-TA Group
+
+❌ Rejected → Stay on 15.3
+
+🔔 On Rejection: Notify TGL-TA Group
+
+📨 Sent to: None
+
+✅ Stage 16: TECO Submission
+Trigger: EMTS review completed.
+
+Performer: EMTS & TAO
+
+Decision: Submission (informational stage)
+
+Next Step: Stage 17.1 – TECO Approval
+
+Notifications:
+
+🔔 Technical Services, OCED, SOB
+
+Review Comments: None
+
+✅ Stage 17.1: TECO Approval
+Trigger: TECO receives submission.
+
+Performer: SOB
+
+Decision Paths:
+
+✅ Approved → Go to Stage 17.2
+
+🔔 On Approval: Notify TECO Group
+
+❌ Rejected → Stay on 17.1
+
+🔔 On Rejection: Notify TECO Group
+
+📨 Sent to: TECO Group
+
+⚠️ Conditionally Approved → Go to Stage 17.1 again
+
+🔔 On Conditional Approval: Agreement South Africa, TECO Group
+
+✅ Stage 17.2: Board Ratification
+Trigger: TECO Approval
+
+Performer: SOB
+
+Decision Paths:
+
+✅ Ratified → Go to Stage 18
+
+🔔 On Approval: Notify Board Group, Technical Services
+
+❌ Not Ratified → Stay on 17.2
+
+🔔 On Rejection: Notify Board Group
+
+📨 Sent to: Board Group
+
+✅ Stage 18: Publish Certificate (Triggered by 17.1 positive outcome – Ratified)
+Trigger: Ratification
+
+Performer: PL
+
+Decision Paths:
+
+✅ Submitted → Go to 18.1a
+
+🔔 On Approval: Notify PL Group, STA, and TAO
+
+❌ Rejected → Stay on 18
+
+🔔 On Rejection: Notify TAO Group
+
+📨 Sent to: TAO Group
+
+✅ Stage 18.1a: Website Upload Request & Gazette
+Trigger: Certificate published.
+
+Performer: TAO
+
+Decision Paths:
+
+✅ Submitted → Go to 18.2
+
+🔔 Notify EMTS, TAO and PL
+
+❌ Rejected → Stay on 18.1a
+
+🔔 Notify EMTS
+
+📨 Sent to: EMTS
+
+✅ Stage 18.2: Approval – Publishing Requests
+Trigger: Request is submitted
+
+Performer: SOB
+
+Decision Paths:
+
+✅ Approved → Go to 19
+
+🔔 Notify Board Chairperson Group, Project Leader, STA, and TAO
+
+❌ Rejected → Stay on 18.2
+
+🔔 Notify Board Chairperson Group
+
+📨 Sent to: Board Chairperson Group
+
+✅ Stage 19: Certificate Signing (Triggered by 17.1 positive outcome – Ratified)
+Trigger: Publishing approved
+
+Performer: SOB
+
+Decision Paths:
+
+✅ Signed → Go to 19.b
+
+🔔 Notify Board Chairperson Group
+
+❌ Not Signed → Stay on 19.b
+
+🔔 Notify Board Chairperson Group
+
+📨 Sent to: Board Chairperson Group
+
+✅ Stage 19.b: Certificate Signing Status
+Trigger: Certificate is signed or ready
+
+Performer: TAO
+
+Decision Paths:
+
+✅ Collected → Go to 20
+
+🔔 Notify TAO Group, Project Leader, STA, and TGL-TA
+
+📄 Digital Copy also sent to 20
+
+❌ Rejected → Stay on 19.b
+
+🔔 Notify TAO Group
+
+📨 Sent to: None
+
+✅ Stage 20: Project Closure
+Trigger: Certificate is collected.
+
+Performer: PL
+
+Decision Paths:
+
+✅ Conditionally Approved → Go to 20.2
+
+🔔 Notify PL Group, Finance, STA, TGL-TA and TAO
+
+❌ Rejected → Stay on 20
+
+🔔 Notify PL Group
+
+📨 Sent to: PL Group
+
+✅ Stage 20.1: Project Closure Report
+Trigger: Closure is complete.
+
+Performer: PL
+
+Decision: None (uploaded)
+
+Next Step: 20.2
+
+Notifications: None
+
+✅ Stage 20.2: Approve Project Closure
+Trigger: Report is uploaded.
+
+Performer: TGL-TA
+
+Decision Paths:
+
+✅ Approved → END
+
+🔔 Notify PL, STA, TGL-TA and TAO
+
+❌ Rejected → Stay on 20.2
+
+🔔 Notify TGL-TA
+
+📨 Sent to: TGL-TA
+

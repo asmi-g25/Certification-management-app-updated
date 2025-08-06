@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}System Setup - Certificate Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-3">
+    <h1><i class="fas fa-cog"></i> System Setup</h1>
+    
+    <div class="row mt-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-tools"></i> Setup Options</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>Warning:</strong> Some of these operations can modify or delete data. Use with caution.
+                    </div>
+                    
+                    <form method="POST">
+                        <div class="mb-4">
+                            <h6>Initial Data Setup</h6>
+                            <p class="text-muted">Create initial users, groups, workflow stages, and system data.</p>
+                            <button type="submit" name="setup_type" value="initial_data" class="btn btn-primary" 
+                                    onclick="return confirm('This will create initial system data. Continue?')">
+                                <i class="fas fa-database"></i> Create Initial Data
+                            </button>
+                        </div>
+                        
+                        <hr>
+                        
+                        <div class="mb-4">
+                            <h6>Sample Applications</h6>
+                            <p class="text-muted">Create sample applications for testing and demonstration purposes.</p>
+                            <button type="submit" name="setup_type" value="sample_applications" class="btn btn-info"
+                                    onclick="return confirm('This will create sample applications. Continue?')">
+                                <i class="fas fa-file-alt"></i> Create Sample Applications
+                            </button>
+                        </div>
+                        
+                        <hr>
+                        
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-info-circle"></i> Setup Information</h5>
+                </div>
+                <div class="card-body">
+                    <h6>Default Admin Account</h6>
+                    <p>
+                        <strong>Username:</strong> admin<br>
+                        <strong>Password:</strong> admin123<br>
+                        <strong>Email:</strong> admin@certmanagement.com
+                    </p>
+                    <h6>Workflow Stages</h6>
+                    <p>23 main workflow stages plus corresponding review stages will be created.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

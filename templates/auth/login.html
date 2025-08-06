@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block title %}Login - Certificate Management System{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center align-items-center min-vh-100">
+        <div class="col-lg-5 col-md-6 col-sm-8">
+            <div class="card border-0 shadow-lg">
+                <div class="card-body p-5">
+                    <div class="text-center mb-5">
+                        <div class="mb-4">
+                            <div class="d-inline-flex align-items-center justify-content-center" 
+                                 style="width: 80px; height: 80px; background: var(--gradient-steel); border-radius: 12px; box-shadow: var(--shadow-steel);">
+                                <i class="fas fa-shield-alt" style="font-size: 2rem; color: var(--corporate-white);"></i>
+                            </div>
+                        </div>
+                        <h1 style="font-family: 'Roboto Slab', serif; color: var(--deep-charcoal); font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem;">
+                            SECURE ACCESS
+                        </h1>
+                        <p style="color: var(--text-secondary); font-size: 1rem; margin: 0; text-transform: uppercase; letter-spacing: 1px; font-weight: 500;">
+                            Certificate Management Portal
+                        </p>
+                    </div>
+                    
+                    <form method="POST" class="needs-validation" novalidate>
+                        <div class="mb-4">
+                            <label for="username" class="form-label">
+                                <i class="fas fa-user me-2" style="color: var(--steel-blue);"></i>Username
+                            </label>
+                            <input type="text" class="form-control form-control-lg" id="username" name="username" required 
+                                   placeholder="Enter your username" style="font-size: 1rem; padding: 1rem;">
+                            <div class="invalid-feedback">Please provide a valid username.</div>
+                        </div>
+                        
+                        <div class="mb-5">
+                            <label for="password" class="form-label">
+                                <i class="fas fa-lock me-2" style="color: var(--steel-blue);"></i>Password
+                            </label>
+                            <input type="password" class="form-control form-control-lg" id="password" name="password" required 
+                                   placeholder="Enter your password" style="font-size: 1rem; padding: 1rem;">
+                            <div class="invalid-feedback">Please provide your password.</div>
+                        </div>
+                        
+                        <div class="d-grid mb-4">
+                            <button type="submit" class="btn btn-primary btn-lg py-3" style="font-size: 1rem; font-weight: 700;">
+                                <i class="fas fa-sign-in-alt me-2"></i> LOGIN TO SYSTEM
+                            </button>
+                        </div>
+                    </form>
+                    
+                    <div class="border-top pt-4" style="border-color: var(--border-neutral) !important;">
+                        <div class="text-center mb-4">
+                            <h6 style="color: var(--text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
+                                External Access
+                            </h6>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-6">
+                                <a href="{{ url_for('external_apply') }}" class="btn btn-outline-primary w-100 py-3">
+                                    <i class="fas fa-file-upload d-block mb-2" style="font-size: 1.2rem;"></i>
+                                    <span style="font-size: 0.75rem; font-weight: 600;">Submit Application</span>
+                                </a>
+                            </div>
+                            <div class="col-6">
+                                <a href="{{ url_for('status_check_form') }}" class="btn btn-outline-secondary w-100 py-3">
+                                    <i class="fas fa-search d-block mb-2" style="font-size: 1.2rem;"></i>
+                                    <span style="font-size: 0.75rem; font-weight: 600;">Check Status</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .min-vh-100 {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+    }
+    
+    .form-control-lg {
+        border-width: 2px;
+        font-weight: 500;
+    }
+    
+    .needs-validation .form-control:invalid {
+        border-color: var(--danger-red);
+    }
+    
+    .needs-validation .form-control:valid {
+        border-color: var(--steel-blue);
+    }
+</style>
+
+<script>
+// Enhanced form validation
+(function() {
+    'use strict';
+    window.addEventListener('load', function() {
+        var forms = document.getElementsByClassName('needs-validation');
+        var validation = Array.prototype.filter.call(forms, function(form) {
+            form.addEventListener('submit', function(event) {
+                if (form.checkValidity() === false) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                form.classList.add('was-validated');
+            }, false);
+        });
+    }, false);
+})();
+</script>
+{% endblock %}

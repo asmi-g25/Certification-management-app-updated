@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Application Status - Certificate Management System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Roboto+Slab:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --steel-blue: #1e40af;
+            --light-steel: #3b82f6;
+            --accent-blue: #0ea5e9;
+            --deep-charcoal: #2d3748;
+            --rich-charcoal: #4a5568;
+            --light-charcoal: #718096;
+            --corporate-white: #ffffff;
+            --warm-white: #fafbfc;
+            --light-neutral: #f4f6f8;
+            --border-neutral: #e2e6ea;
+            --text-primary: #2d3748;
+            --text-secondary: #4a5568;
+            --text-light: #718096;
+            --success-green: #10b981;
+            --warning-amber: #f59e0b;
+            --danger-red: #ef4444;
+            --gradient-primary: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+            --gradient-steel: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+            --gradient-light: linear-gradient(135deg, #fafbfc 0%, #f4f6f8 100%);
+            --shadow-sm: 0 1px 3px rgba(45, 55, 72, 0.12), 0 1px 2px rgba(45, 55, 72, 0.08);
+            --shadow-md: 0 4px 6px rgba(45, 55, 72, 0.08), 0 2px 4px rgba(45, 55, 72, 0.06);
+            --shadow-lg: 0 10px 15px rgba(45, 55, 72, 0.12), 0 4px 6px rgba(45, 55, 72, 0.06);
+            --shadow-steel: 0 4px 12px rgba(30, 64, 175, 0.18);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--gradient-light);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .status-header {
+            background: var(--gradient-primary);
+            color: var(--corporate-white);
+            padding: 3rem 0;
+            text-align: center;
+            position: relative;
+        }
+
+        .status-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--gradient-steel);
+        }
+
+        .status-header h1 {
+            font-family: 'Roboto Slab', serif;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .status-card {
+            background: var(--corporate-white);
+            border-radius: 12px;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border-neutral);
+            margin: -2rem auto 3rem;
+            max-width: 800px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .status-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--gradient-steel);
+        }
+
+        .application-overview {
+            background: var(--gradient-light);
+            padding: 2rem;
+            border-bottom: 1px solid var(--border-neutral);
+        }
+
+        .overview-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 1rem;
+            background: var(--corporate-white);
+            border-radius: 8px;
+            border: 1px solid var(--border-neutral);
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--steel-blue);
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-light);
+            font-weight: 600;
+        }
+
+        .status-timeline {
+            padding: 2rem;
+        }
+
+        .timeline {
+            position: relative;
+            padding-left: 3rem;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 15px;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: var(--gradient-steel);
+            border-radius: 2px;
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 2.5rem;
+            background: var(--warm-white);
+            border: 1px solid var(--border-neutral);
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-left: 1rem;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -32px;
+            top: 20px;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--steel-blue);
+            border: 4px solid var(--corporate-white);
+            box-shadow: var(--shadow-md);
+        }
+
+        .timeline-item.completed::before {
+            background: var(--success-green);
+        }
+
+        .timeline-item.current::before {
+            background: var(--warning-amber);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        .timeline-content h5 {
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .timeline-content p {
+            color: var(--text-secondary);
+            margin-bottom: 0.75rem;
+        }
+
+        .timeline-meta {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            font-size: 0.85rem;
+            color: var(--text-light);
+        }
+
+        .status-badge {
+            padding: 0.4rem 0.8rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .badge-completed {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success-green);
+            border: 1px solid var(--success-green);
+        }
+
+        .badge-current {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--warning-amber);
+            border: 1px solid var(--warning-amber);
+        }
+
+        .badge-pending {
+            background: rgba(113, 128, 150, 0.1);
+            color: var(--light-charcoal);
+            border: 1px solid var(--light-charcoal);
+        }
+
+        .action-buttons {
+            padding: 2rem;
+            border-top: 1px solid var(--border-neutral);
+            background: var(--gradient-light);
+            text-align: center;
+        }
+
+        .btn {
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            border-radius: 8px;
+            padding: 0.8rem 1.8rem;
+            font-size: 0.85rem;
+            border-width: 2px;
+            margin: 0 0.5rem;
+        }
+
+        .btn-primary {
+            background: var(--gradient-steel);
+            border-color: var(--steel-blue);
+            color: var(--corporate-white);
+        }
+
+        .btn-outline-secondary {
+            color: var(--deep-charcoal);
+            border-color: var(--rich-charcoal);
+            background-color: transparent;
+        }
+
+        .footer-links {
+            background: var(--deep-charcoal);
+            color: var(--corporate-white);
+            padding: 2rem 0;
+            text-align: center;
+            margin-top: auto;
+        }
+
+        .footer-links a {
+            color: var(--light-steel);
+            text-decoration: none;
+            margin: 0 1rem;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="status-header">
+        <div class="container">
+            <div class="mb-4">
+                <div class="d-inline-flex align-items-center justify-content-center" 
+                     style="width: 80px; height: 80px; background: var(--gradient-steel); border-radius: 12px; box-shadow: var(--shadow-steel);">
+                    <i class="fas fa-search" style="font-size: 2rem; color: var(--corporate-white);"></i>
+                </div>
+            </div>
+            <h1>Application Status</h1>
+            <p>Track your certificate application progress</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="status-card">
+            <!-- Application Overview -->
+            <div class="application-overview">
+                <h3 style="color: var(--deep-charcoal); text-align: center; margin-bottom: 1rem;">
+                    Application #{{ application.application_number }}
+                </h3>
+                <div class="text-center mb-3">
+                    <span class="status-badge badge-{% if application.status == 'Completed' %}completed{% elif application.status == 'In Progress' %}current{% else %}pending{% endif %}">
+                        {{ application.status }}
+                    </span>
+                </div>
+                
+                <div class="overview-stats">
+                    <div class="stat-item">
+                        <div class="stat-value">{{ application.applicant_name }}</div>
+                        <div class="stat-label">Applicant</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">{{ application.certificate_type or 'N/A' }}</div>
+                        <div class="stat-label">Certificate Type</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">{{ application.submitted_at.strftime('%m/%d/%Y') if application.submitted_at else 'N/A' }}</div>
+                        <div class="stat-label">Submitted Date</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">{{ application.current_stage.name if application.current_stage else 'N/A' }}</div>
+                        <div class="stat-label">Current Stage</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Status Timeline -->
+            <div class="status-timeline">
+                <h4 style="color: var(--deep-charcoal); margin-bottom: 2rem; text-align: center;">
+                    <i class="fas fa-timeline me-2" style="color: var(--steel-blue);"></i>
+                    Processing Timeline
+                </h4>
+                
+                {% if history %}
+                <div class="timeline">
+                    {% for history_item in history %}
+                    <div class="timeline-item {% if loop.last %}current{% else %}completed{% endif %}">
+                        <div class="timeline-content">
+                            <h5>{{ history_item.to_stage.name if history_item.to_stage else 'Unknown Stage' }}</h5>
+                            <p>{{ history_item.action }} by {{ history_item.moved_by_user.full_name if history_item.moved_by_user else 'System' }}</p>
+                            {% if history_item.reason %}
+                            <div style="background: var(--light-neutral); border-radius: 6px; padding: 0.75rem; margin-top: 0.5rem;">
+                                <small style="color: var(--text-primary);">{{ history_item.reason }}</small>
+                            </div>
+                            {% endif %}
+                            <div class="timeline-meta">
+                                <span><i class="fas fa-calendar me-1"></i>{{ history_item.created_at.strftime('%B %d, %Y at %I:%M %p SAST') if history_item.created_at else 'N/A' }}</span>
+                                <span class="status-badge badge-{% if loop.last %}current{% else %}completed{% endif %}">
+                                    {% if loop.last %}Current{% else %}Completed{% endif %}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-clock fa-3x mb-3" style="color: var(--text-light);"></i>
+                    <h5 style="color: var(--text-secondary);">Processing Not Started</h5>
+                    <p style="color: var(--text-light);">Your application is in queue for processing.</p>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Documents Section -->
+            <div class="documents-section" style="padding: 2rem; border-top: 1px solid var(--border-neutral); background: var(--warm-white);">
+                <h4 style="color: var(--deep-charcoal); margin-bottom: 1.5rem; text-align: center;">
+                    <i class="fas fa-file-alt me-2" style="color: var(--steel-blue);"></i>
+                    Application Documents
+                </h4>
+                
+                {% if documents %}
+                <div class="documents-list mb-4">
+                    <h6 style="color: var(--text-secondary); margin-bottom: 1rem;">Uploaded Documents:</h6>
+                    <div class="row">
+                        {% for document in documents %}
+                        <div class="col-md-6 mb-2">
+                            <div class="document-item" style="background: var(--corporate-white); border: 1px solid var(--border-neutral); border-radius: 8px; padding: 1rem;">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-file-pdf me-2" style="color: var(--steel-blue);"></i>
+                                    <div class="flex-grow-1">
+                                        <div style="font-weight: 600; color: var(--text-primary);">{{ document.original_filename }}</div>
+                                        <small style="color: var(--text-light);">{{ document.document_type }}</small>
+                                        {% if document.description %}
+                                        <br><small style="color: var(--text-light);">{{ document.description }}</small>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% else %}
+                <div class="text-center py-3">
+                    <i class="fas fa-folder-open fa-2x mb-2" style="color: var(--text-light);"></i>
+                    <p style="color: var(--text-secondary); margin: 0;">No documents uploaded yet</p>
+                </div>
+                {% endif %}
+
+                <!-- Upload Missing Document Form -->
+                <div class="upload-section" style="background: var(--corporate-white); border: 1px solid var(--border-neutral); border-radius: 10px; padding: 1.5rem; margin-top: 1.5rem;">
+                    <h6 style="color: var(--deep-charcoal); margin-bottom: 1rem;">
+                        <i class="fas fa-upload me-2" style="color: var(--steel-blue);"></i>
+                        Upload Missing Document
+                    </h6>
+                    <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1.5rem;">
+                        If you need to upload additional documents or missing information, please use the form below.
+                    </p>
+                    
+                    <form method="POST" action="{{ url_for('upload_missing_document', application_number=application.application_number) }}" enctype="multipart/form-data">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="document_type" class="form-label" style="color: var(--text-primary); font-weight: 600;">Document Type</label>
+                                <select class="form-select" id="document_type" name="document_type" required>
+                                    <option value="">Select Document Type</option>
+                                    <option value="Additional Documentation">Additional Documentation</option>
+                                    <option value="Revised Documents">Revised Documents</option>
+                                    <option value="Proof of Payment">Proof of Payment</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="file" class="form-label" style="color: var(--text-primary); font-weight: 600;">Select File</label>
+                                <input type="file" class="form-control" id="file" name="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.txt" required>
+                                <div class="form-text" style="color: var(--text-light); font-size: 0.8rem;">
+                                    Allowed formats: PDF, DOC, DOCX, JPG, PNG, GIF, TXT (Max 16MB)
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="description" class="form-label" style="color: var(--text-primary); font-weight: 600;">Description (Optional)</label>
+                            <textarea class="form-control" id="description" name="description" rows="3" 
+                                      placeholder="Please describe what this document is for..."></textarea>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-upload me-2"></i> Upload Document
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="action-buttons">
+                <a href="{{ url_for('status_check_form') }}" class="btn btn-primary">
+                    <i class="fas fa-search me-2"></i> Check Another Application
+                </a>
+                <a href="{{ url_for('external_apply') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-plus me-2"></i> Submit New Application
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer-links">
+        <div class="container">
+            <a href="{{ url_for('external_apply') }}">Submit Application</a>
+            <a href="{{ url_for('login') }}">Staff Login</a>
+            <a href="mailto:support@certificates.com">Contact Support</a>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
