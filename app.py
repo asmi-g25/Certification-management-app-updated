@@ -13,13 +13,11 @@ from email.mime.base import MIMEBase
 from email import encoders
 import json
 
-# Flask imports
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_file, abort
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from flask_migrate import Migrate
 
-# PDF generation
 try:
     from reportlab.pdfgen import canvas
     from reportlab.lib.pagesizes import letter, A4
@@ -30,30 +28,25 @@ try:
 except ImportError:
     PDF_AVAILABLE = False
 
-# Initialize Flask app
 app = Flask(__name__)
 
-# Timezone conversion utility
 from datetime import timezone, timedelta
 
 def utc_to_sast(utc_dt):
     """Convert UTC datetime to South African Standard Time (SAST)"""
     if utc_dt is None:
         return None
-    # SAST is UTC+2
+
     sast = timezone(timedelta(hours=2))
     return utc_dt.replace(tzinfo=timezone.utc).astimezone(sast)
 
-# Add to Jinja2 template globals
 @app.template_global()
 def to_sast(utc_dt):
     """Template function to convert UTC to SAST"""
     return utc_to_sast(utc_dt)
 
-# Configuration - Updated with new SMTP settings
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY') or 'secret-key-change-this-in-production'
 
-# Supabase PostgreSQL Configuration
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres.xwxeyzwmbypzzlmgfkcq:ash1951@aws-0-ap-south-1.pooler.supabase.com:5432/postgres?sslmode=require'
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -69,7 +62,6 @@ app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
 app.config['UPLOAD_FOLDER'] = os.path.join(os.getcwd(), 'uploads')
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 
-# Updated Email configuration with SMTP credentials
 app.config['MAIL_SERVER'] = 'mail.lis-demos.co.za'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
@@ -77,7 +69,6 @@ app.config['MAIL_USERNAME'] = 'techassess@lis-demos.co.za'
 app.config['MAIL_PASSWORD'] = 'Test@12345#TTf'
 app.config['MAIL_DEFAULT_SENDER'] = 'techassess@lis-demos.co.za'
 
-# Certificate settings
 app.config['CERTIFICATE_VALIDITY_YEARS'] = 3
 
 
@@ -91,13 +82,11 @@ login_manager.login_view = 'login'
 os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'documents'), exist_ok=True)
 os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'certificates'), exist_ok=True)
 
-# Logging setup
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# =============================================================================
-# DATABASE MODELS
-# =============================================================================
+
+
 
 class User(UserMixin, db.Model):
     __tablename__ = 'users'
@@ -157,7 +146,6 @@ class UserGroupAssignment(db.Model):
     assigned_by_user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     assigned_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    # Relationships with explicit foreign_keys
     user = db.relationship('User', foreign_keys=[user_id])
     group = db.relationship('Group', foreign_keys=[group_id])
     assigned_by = db.relationship('User', foreign_keys=[assigned_by_user_id])
@@ -175,7 +163,6 @@ class Stage(db.Model):
     next_stage_id = db.Column(db.Integer, db.ForeignKey('stages.id'))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    # Self-referencing relationships with explicit foreign_keys
     parent_stage = db.relationship('Stage', remote_side=[id], foreign_keys=[parent_stage_id])
     next_stage = db.relationship('Stage', remote_side=[id], foreign_keys=[next_stage_id])
 
@@ -187,7 +174,6 @@ class StageGroupAssignment(db.Model):
     group_id = db.Column(db.Integer, db.ForeignKey('groups.id'), nullable=False)
     assigned_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    # Relationships
     stage = db.relationship('Stage', foreign_keys=[stage_id])
     group = db.relationship('Group', foreign_keys=[group_id])
 
@@ -202,7 +188,6 @@ class StageNotificationRule(db.Model):
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    # Relationships
     stage = db.relationship('Stage', foreign_keys=[stage_id])
 
 class Company(db.Model):
@@ -235,7 +220,6 @@ class Application(db.Model):
     submitted_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     last_updated = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    # Relationships
     company = db.relationship('Company', foreign_keys=[company_id])
     current_stage = db.relationship('Stage', foreign_keys=[current_stage_id])
 
@@ -243,13 +227,13 @@ class Application(db.Model):
         """Generate unique application number"""
         if not self.application_number:
             year = datetime.now().year
-            # Get the last application number for this year
+
             last_app = Application.query.filter(
                 Application.application_number.like(f'APP{year}%')
             ).order_by(Application.application_number.desc()).first()
 
             if last_app:
-                # Extract the sequence number and increment
+
                 try:
                     last_seq = int(last_app.application_number.split('-')[-1])
                     seq = last_seq + 1
@@ -262,7 +246,7 @@ class Application(db.Model):
 
     def generate_client_upload_token(self):
         """Generate secure upload token for this application"""
-        # Create a hash based on application ID and secret key
+
         token_data = f"{self.id}:{self.application_number}:{app.config['SECRET_KEY']}"
         return hashlib.sha256(token_data.encode()).hexdigest()[:32]
 
@@ -286,9 +270,9 @@ class Application(db.Model):
     @staticmethod
     def verify_access_token(token):
         """Verify access token and return associated application"""
-        # Simple implementation - in production, store tokens in database with expiry
+
         try:
-            # For now, encode application ID in token (not secure for production)
+
             return Application.query.first()  # Simplified for demo
         except:
             return None
@@ -305,7 +289,6 @@ class ApplicationHistory(db.Model):
     moved_by_user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    # Relationships
     application = db.relationship('Application', foreign_keys=[application_id])
     from_stage = db.relationship('Stage', foreign_keys=[from_stage_id])
     to_stage = db.relationship('Stage', foreign_keys=[to_stage_id])
@@ -327,7 +310,6 @@ class Document(db.Model):
     uploaded_by_user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    # Relationships
     application = db.relationship('Application', foreign_keys=[application_id])
     uploaded_by_user = db.relationship('User', foreign_keys=[uploaded_by_user_id])
 
@@ -346,7 +328,6 @@ class Certificate(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     last_updated = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    # Relationships
     application = db.relationship('Application', foreign_keys=[application_id])
     generated_by = db.relationship('User', foreign_keys=[generated_by_user_id])
 
@@ -354,7 +335,7 @@ class Certificate(db.Model):
         """Generate unique certificate number"""
         if not self.certificate_number:
             year = datetime.now().year
-            # Get the last certificate number for this year
+
             last_cert = Certificate.query.filter(
                 Certificate.certificate_number.like(f'CERT{year}%')
             ).order_by(Certificate.certificate_number.desc()).first()
@@ -394,7 +375,6 @@ class CertificateStatusHistory(db.Model):
     changed_by_user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     changed_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    # Relationships
     certificate = db.relationship('Certificate', foreign_keys=[certificate_id])
     changed_by = db.relationship('User', foreign_keys=[changed_by_user_id])
 
@@ -411,7 +391,6 @@ class AuditLog(db.Model):
     user_agent = db.Column(db.String(255))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    # Relationships
     user = db.relationship('User', foreign_keys=[user_id])
 
     @staticmethod
@@ -431,17 +410,15 @@ class AuditLog(db.Model):
         except Exception as e:
             logger.error(f'Failed to create audit log: {e}')
 
-# =============================================================================
-# LOGIN MANAGER
-# =============================================================================
+
+
 
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
 
-# =============================================================================
-# DECORATORS
-# =============================================================================
+
+
 
 def admin_required(f):
     @wraps(f)
@@ -452,9 +429,8 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-# =============================================================================
-# EMAIL SERVICE
-# =============================================================================
+
+
 
 class EmailService:
     def __init__(self):
@@ -491,11 +467,9 @@ class EmailService:
             msg['To'] = ', '.join(to_emails) if isinstance(to_emails, list) else to_emails
             msg['Subject'] = subject
 
-            # Add signature to body
             body_with_signature = body + self.get_notification_signature()
             msg.attach(MIMEText(body_with_signature, 'html'))
 
-            # Add attachments
             if attachments:
                 for file_path in attachments:
                     if os.path.exists(file_path):
@@ -509,7 +483,6 @@ class EmailService:
                             )
                             msg.attach(part)
 
-            # Send email
             with smtplib.SMTP(self.smtp_server, self.smtp_port) as server:
                 if self.use_tls:
                     server.starttls()
@@ -533,14 +506,11 @@ class EmailService:
         try:
             logger.info(f'Sending notifications for application {application.application_number}, action: {action}, stage: {new_stage.name}')
 
-            # Get notification rules based on your exact specification
             notification_rules = self.get_stage_notification_rules(new_stage.stage_number, action)
-            
-            # Get stage groups
+
             stage_groups = self.get_stage_groups(new_stage.id)
             logger.info(f'Found {len(stage_groups)} groups for stage {new_stage.stage_number}: {[g.name for g in stage_groups]}')
 
-            # Determine if this is a rejection/review action
             rejection_actions = [
                 'application_not_complete', 'rejected', 'payment_not_verified', 'not_allocated', 'request_info',
                 'deviate', 'amendment', 'conditionally_approved', 'not_ratified', 'not_signed'
@@ -549,10 +519,9 @@ class EmailService:
             is_rejection = action in rejection_actions
             logger.info(f'Action "{action}" is rejection: {is_rejection}')
 
-            # Send notifications based on your specification
             if notification_rules.get('notify_groups', True) and stage_groups:
                 try:
-                    # Get additional notification groups from your specification
+
                     additional_groups = notification_rules.get('additional_groups', [])
                     all_notification_groups = stage_groups + self.get_groups_by_names(additional_groups)
                     
@@ -564,7 +533,6 @@ class EmailService:
                 except Exception as e:
                     logger.error(f'Error notifying groups: {e}')
 
-            # Client notifications based on your specification
             if notification_rules.get('notify_client', True):
                 try:
                     if is_rejection or notification_type == 'review':
@@ -583,32 +551,24 @@ class EmailService:
 
     def get_stage_notification_rules(self, stage_number, action):
         """Get notification rules based on your exact workflow specification"""
-        
-        # Define which stages and actions should notify the client based on your specification
+
         client_notification_rules = {
-            # Stage 1: New Application - Always notify client
+
             1.0: {'all_actions': True},
-            
-            # Stage 2: Verification of Application Completeness - Always notify client
+
             2.0: {'all_actions': True},
-            
-            # Stage 3: Admin Fee Request - Only notify client for "Accepted", NOT for "Rejected" or "Request Info"
+
             3.0: {'specific_actions': ['accepted']},
-            
-            # Stage 4.2: Admin fee-Proof of Payment (Client uploads) - Notify client with upload URL
+
             4.2: {'all_actions': True},
-            
-            # Stage 11: Client Response - Always notify client
+
             11.0: {'all_actions': True},
-            
-            # Stage 11.1: Review: Client Response - Always notify client  
+
             11.1: {'all_actions': True},
-            
-            # Stage 13.2: Evaluation fee-Proof of Payment (Client uploads) - Notify client with upload URL
+
             13.2: {'all_actions': True},
         }
-        
-        # Check if client should be notified for this stage and action
+
         should_notify_client = False
         if stage_number in client_notification_rules:
             rule = client_notification_rules[stage_number]
@@ -616,154 +576,105 @@ class EmailService:
                 should_notify_client = True
             elif 'specific_actions' in rule:
                 should_notify_client = action in rule['specific_actions']
-        
-        # Notification rules based on your detailed specification
+
         notification_rules = {
-            # Stage 1: New Application by client - Notify TAO Group and Client
+
             1.0: {'notify_groups': True, 'notify_client': should_notify_client, 'additional_groups': []},
-            
-            # Stage 2: Verification of Application Completeness - TAO Notify TAO Group and Client, Notify Client
+
             2.0: {'notify_groups': True, 'notify_client': should_notify_client, 'additional_groups': []},
-            
-            # Stage 3: Admin Fee Request - Accepted: Notify TAO Group and Client, Rejected/Request Info: Notify TAO Group ONLY
+
             3.0: {'notify_groups': True, 'notify_client': should_notify_client, 'additional_groups': []},
-            
-            # Stage 4: Admin Invoice Generation - Notify Finance Group and TAO Finance Group
+
             4.0: {'notify_groups': True, 'notify_client': False, 'additional_groups': ['TAO']},
-            
-            # Stage 4.1: Confirmation of Invoice - TAO (goes to client)
+
             4.1: {'notify_groups': True, 'notify_client': should_notify_client, 'additional_groups': []},
-            
-            # Stage 4.2: Admin fee-Proof of Payment - Notify TAO Group and Finance Group AND CLIENT
+
             4.2: {'notify_groups': True, 'notify_client': should_notify_client, 'additional_groups': []},
-            
-            # Stage 4.3: Payment Confirmation - Notify TAO Group, TGL: TA
+
             4.3: {'notify_groups': True, 'notify_client': False, 'additional_groups': ['TAO', 'TGL: TA']},
-            
-            # Stage 5: Allocation: Criteria Review - Notify TGL: TA Group, Notify TAO Group
+
             5.0: {'notify_groups': True, 'notify_client': False, 'additional_groups': ['TAO']},
-            
-            # Stage 5.1: Review: Application Criteria review - Notify Finance Group
+
             5.1: {'notify_groups': True, 'notify_client': False, 'additional_groups': ['Finance']},
-            
-            # Stage 6: Peer Review-Criteria Review - Notify Technical Services Group
+
             6.0: {'notify_groups': True, 'notify_client': False, 'additional_groups': ['Technical Services']},
-            
-            # Stage 6.1: Peer review Committee - Notify Technical Services Group
+
             6.1: {'notify_groups': True, 'notify_client': False, 'additional_groups': ['Technical Services']},
-            
-            # Stage 7: Approval - Application Criteria Report - Notify TGL:TA, STA and TAO Group
+
             7.0: {'notify_groups': True, 'notify_client': False, 'additional_groups': ['STA', 'TAO']},
-            
-            # Stage 8: Allocation: Preparation: AWO - Notify STA, TAO Group, Notify STA Group
+
             8.0: {'notify_groups': True, 'notify_client': False, 'additional_groups': ['STA', 'TAO']},
-            
-            # Stage 8.1: Preparation: AWO - Notify Finance Group
+
             8.1: {'notify_groups': True, 'notify_client': False, 'additional_groups': ['Finance']},
-            
-            # Stage 8.2: Peer Review-Draft AWO - Notify Technical Services Group
+
             8.2: {'notify_groups': True, 'notify_client': False, 'additional_groups': ['Technical Services']},
-            
-            # Stage 8.3: Peer Committee-Draft AWO - Notify TAO Group
+
             8.3: {'notify_groups': True, 'notify_client': False, 'additional_groups': ['TAO']},
-            
-            # Stage 8.4: Review: Approval Submission - Notify TGL:TA, STA and TAO Group, Notify STA Group
+
             8.4: {'notify_groups': True, 'notify_client': False, 'additional_groups': ['STA', 'TAO']},
-            
-            # Stage 9: Approval: Assessment work offer - Notify EMTS, TAO, STA and TGL:TA Group, EMTS Group
+
             9.0: {'notify_groups': True, 'notify_client': False, 'additional_groups': ['TAO', 'STA', 'TGL: TA']},
-            
-            # Stage 10: Dispatched Assessment work offer - Notify TAO Group, TGL: TA, STA
+
             10.0: {'notify_groups': True, 'notify_client': False, 'additional_groups': ['TGL: TA', 'STA']},
-            
-            # Stage 11: Client Response - Notify TAO Group, TGL: TA, STA, Notify Client & TAO Group
+
             11.0: {'notify_groups': True, 'notify_client': should_notify_client, 'additional_groups': ['TGL: TA', 'STA']},
-            
-            # Stage 11.1: Review: Client Response - Notify Client & TAO Group
+
             11.1: {'notify_groups': True, 'notify_client': should_notify_client, 'additional_groups': []},
-            
-            # Stage 12: Evaluation Fee Request - Notify TAO Group
+
             12.0: {'notify_groups': True, 'notify_client': False, 'additional_groups': []},
-            
-            # Stage 13: Evaluation Invoice Generation - Notify Finance Group and TAO Finance Group
+
             13.0: {'notify_groups': True, 'notify_client': False, 'additional_groups': ['TAO']},
-            
-            # Stage 13.1: Confirmation of Invoice - TAO (goes to client)
+
             13.1: {'notify_groups': True, 'notify_client': should_notify_client, 'additional_groups': []},
-            
-            # Stage 13.2: Evaluation fee-Proof of Payment - Notify TAO Group and Finance Group AND CLIENT
+
             13.2: {'notify_groups': True, 'notify_client': should_notify_client, 'additional_groups': []},
-            
-            # Stage 13.3: Payment Confirmation - Notify TAO Group, TGL: TA, STA
+
             13.3: {'notify_groups': True, 'notify_client': False, 'additional_groups': ['TAO', 'TGL: TA', 'STA']},
-            
-            # Stage 14: Project Allocation - Notify TGL: TA, STA, TA
+
             14.0: {'notify_groups': True, 'notify_client': False, 'additional_groups': ['STA', 'TA']},
-            
-            # Stage 14.1: Project Assessment - Notify STA & Project Leader Group and TGL: TA Group
+
             14.1: {'notify_groups': True, 'notify_client': False, 'additional_groups': ['TGL: TA']},
-            
-            # Stage 14.11: Draft Project Management Plan - Notify STA Group & Project Leader
+
             14.11: {'notify_groups': True, 'notify_client': False, 'additional_groups': ['STA']},
-            
-            # Stage 14.12: Approved Project Management Plan
+
             14.12: {'notify_groups': True, 'notify_client': False, 'additional_groups': []},
-            
-            # Stage 14.13: Review Project Submission - Notify PL
+
             14.13: {'notify_groups': True, 'notify_client': False, 'additional_groups': ['PL']},
-            
-            # Stage 15: Peer Review-Draft Certificate - Notify Technical Services Group
+
             15.0: {'notify_groups': True, 'notify_client': False, 'additional_groups': ['Technical Services']},
-            
-            # Stage 15.1: Peer review Committee -Draft Certificate - Notify Technical Services Group
+
             15.1: {'notify_groups': True, 'notify_client': False, 'additional_groups': ['Technical Services']},
-            
-            # Stage 15.2: Final Review: Assessment Management - Notify TGL: TA Group, STA, Project Leader, Notify TGL: TA Group
+
             15.2: {'notify_groups': True, 'notify_client': False, 'additional_groups': ['STA', 'PL']},
-            
-            # Stage 15.3: Review: EMTS - Notify TGL: TA Group
+
             15.3: {'notify_groups': True, 'notify_client': False, 'additional_groups': []},
-            
-            # Stage 16: TECO Submission - Notify TECO Group
+
             16.0: {'notify_groups': True, 'notify_client': False, 'additional_groups': ['Technical Services', 'OCEO', 'SOB']},
-            
-            # Stage 16.1: Review: TECO Approval - Notify TECO Group
+
             16.1: {'notify_groups': True, 'notify_client': False, 'additional_groups': []},
-            
-            # Stage 17: TECO Approval - SOB Agreement South Africa, TECO Group
+
             17.0: {'notify_groups': True, 'notify_client': False, 'additional_groups': []},
-            
-            # Stage 17.1: Board Ratification - Notify Board Group, Technical Services
+
             17.1: {'notify_groups': True, 'notify_client': False, 'additional_groups': ['Technical Services']},
-            
-            # Stage 17.2: Review: Board Ratification - Notify Board Group, Technical Services
+
             17.2: {'notify_groups': True, 'notify_client': False, 'additional_groups': ['Technical Services']},
-            
-            # Stage 18: Publish Certificate - Notify PL Group, STA, and TAO
+
             18.0: {'notify_groups': True, 'notify_client': False, 'additional_groups': ['STA', 'TAO']},
-            
-            # Stage 18.1: Website Upload Request & Gazette - Notify TAO, Notify TAO Group
+
             18.1: {'notify_groups': True, 'notify_client': False, 'additional_groups': []},
-            
-            # Stage 18.2: Approval: Publishing Requests - Notify EMTS, TAO and PL, Notify EMTS
+
             18.2: {'notify_groups': True, 'notify_client': False, 'additional_groups': ['TAO', 'PL']},
-            
-            # Stage 19: Certificate Signing - Notify Board Chairperson Group, Project Leader, STA, and TAO
+
             19.0: {'notify_groups': True, 'notify_client': False, 'additional_groups': ['PL', 'STA', 'TAO']},
-            
-            # Stage 19.1: Certificate Signing status - Notify Board Chairperson Group
+
             19.1: {'notify_groups': True, 'notify_client': False, 'additional_groups': []},
-            
-            # Stage 19.2: Dispatch signed certificate - Notify TAO Group, Project Leader, STA, and TGL:TA
+
             19.2: {'notify_groups': True, 'notify_client': False, 'additional_groups': ['PL', 'STA', 'TGL: TA']},
-            
-            # Stage 20: Project Closure - Notify PL Group, Finance, STA, TGL:TA and TAO
+
             20.0: {'notify_groups': True, 'notify_client': False, 'additional_groups': ['Finance', 'STA', 'TGL: TA', 'TAO']},
-            
-            # Stage 20.1: Project Closeout report - Notify PL Group, Finance, STA, TGL:TA and TAO
+
             20.1: {'notify_groups': True, 'notify_client': False, 'additional_groups': ['Finance', 'STA', 'TGL: TA', 'TAO']},
-            
-            # Stage 20.2: Approve Project Closure - Notify PL, STA, TGL:TA and TAO, Notify TGL:TA
+
             20.2: {'notify_groups': True, 'notify_client': False, 'additional_groups': ['PL', 'STA', 'TAO']},
         }
         
@@ -787,7 +698,7 @@ class EmailService:
         """Notify groups when application is approved/moved forward"""
         for group in groups:
             try:
-                # Get all active users in the group
+
                 users = User.query.join(
                     UserGroupAssignment, User.id == UserGroupAssignment.user_id
                 ).filter(
@@ -842,7 +753,7 @@ class EmailService:
         """Notify groups when application needs review"""
         for group in groups:
             try:
-                # Get all active users in the group
+
                 users = User.query.join(
                     UserGroupAssignment, User.id == UserGroupAssignment.user_id
                 ).filter(
@@ -901,7 +812,6 @@ class EmailService:
 
             subject = f'Application Update - {application.application_number}'
 
-            # Check if the new stage requires client upload
             workflow_service = WorkflowService()
             requires_upload = workflow_service.stage_requires_client_upload(stage.stage_number)
             logger.info(f'Stage {stage.stage_number} requires upload: {requires_upload}')
@@ -911,20 +821,19 @@ class EmailService:
                 upload_token = application.generate_client_upload_token()
 
                 try:
-                    # Try to generate URL with Flask context
+
                     with app.app_context():
                         upload_url = url_for('client_upload_form',
                                            application_number=application.application_number,
                                            token=upload_token,
                                            _external=True)
                 except:
-                    # Fallback if url_for fails outside request context
+
                     base_url = "https://certification-management-app-updated.onrender.com"
                     upload_url = f"{base_url}/client/upload/{application.application_number}/{upload_token}"
 
                 logger.info(f'Generated upload URL: {upload_url}')
 
-                # Determine upload message based on stage
                 if stage.stage_number == 4.2:
                     upload_message = "upload proof of payment for the admin fee"
                 elif stage.stage_number == 13.2:
@@ -1013,7 +922,6 @@ class EmailService:
         """Notify client when application needs review/additional info"""
         subject = f'Action Required - {application.application_number}'
 
-        # Check if this stage requires or allows client uploads
         workflow_service = WorkflowService()
         requires_upload = workflow_service.stage_requires_client_upload(stage.stage_number)
         allows_upload = workflow_service.stage_allows_client_upload(stage.stage_number)
@@ -1022,7 +930,6 @@ class EmailService:
         if requires_upload or allows_upload:
             upload_token = application.generate_client_upload_token()
 
-            # Use Flask's url_for with _external=True to generate absolute URLs
             try:
                 with app.app_context():
                     upload_url = url_for('client_upload_form',
@@ -1030,7 +937,7 @@ class EmailService:
                                        token=upload_token,
                                        _external=True)
             except:
-                # Fallback if url_for fails outside request context
+
                 base_url = "https://certification-management-app-updated.onrender.com"
                 upload_url = f"{base_url}/client/upload/{application.application_number}/{upload_token}"
 
@@ -1070,7 +977,6 @@ class EmailService:
                 </div>
                 """
 
-        # Special messages for payment stages
         payment_message = ""
         if stage.stage_number in [4.2, 13.2]:
             payment_message = """
@@ -1220,9 +1126,8 @@ class EmailService:
             logger.error(f'Failed to send new application notification: {e}')
             return False
 
-# =============================================================================
-# SERVICES
-# =============================================================================
+
+
 
 class FileService:
     def __init__(self):
@@ -1236,14 +1141,13 @@ class FileService:
     def save_uploaded_file(self, file, application, document_type, description, uploaded_by_external=False, uploaded_by_user_id=None):
         """Save uploaded file with complete validation"""
         try:
-            # Validate file
+
             if not file or file.filename == '':
                 return {'success': False, 'message': 'No file selected.'}
 
             if not self.allowed_file(file.filename):
                 return {'success': False, 'message': 'File type not allowed.'}
 
-            # Check file size
             file.seek(0, 2)  # Seek to end
             file_size = file.tell()
             file.seek(0)  # Reset to beginning
@@ -1251,21 +1155,17 @@ class FileService:
             if file_size > self.max_file_size:
                 return {'success': False, 'message': 'File size too large.'}
 
-            # Generate secure filename
             original_filename = file.filename
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
             secure_name = secure_filename(original_filename)
             filename = f"{application.application_number}_{timestamp}_{secure_name}"
 
-            # Create directory if not exists
             doc_folder = os.path.join(self.upload_folder, 'documents')
             os.makedirs(doc_folder, exist_ok=True)
 
-            # Save file
             file_path = os.path.join(doc_folder, filename)
             file.save(file_path)
 
-            # Create database record
             document = Document(
                 application_id=application.id,
                 filename=filename,
@@ -1303,156 +1203,106 @@ class WorkflowService:
         """Get available actions for a stage based on your detailed workflow specification"""
         stage_num = stage.stage_number
 
-        # Define actions based on your detailed workflow specification
         stage_actions = {
-            # Stage 1: New Application by client
+
             1.0: [('new_application', 'New Application')],
 
-            # Stage 2: Verification of Application Completeness
             2.0: [('application_complete', 'Application Complete'), ('application_not_complete', 'Application Not Complete')],
 
-            # Stage 3: Admin Fee Request
             3.0: [('accepted', 'Accepted'), ('rejected', 'Rejected'), ('request_info', 'Request Info')],
 
-            # Stage 4: Admin Invoice Generation
             4.0: [('generated', 'Generated'), ('rejected', 'Rejected')],
 
-            # Stage 4.1: Confirmation of Invoice (when confirmed, goes to client)
             4.1: [('confirmed', 'Confirmed')],
 
-            # Stage 4.2: Admin fee-Proof of Payment (Client uploads) - CLIENT UPLOAD STAGE
             4.2: [],  # Empty - only client uploads can progress this stage
 
-            # Stage 4.3: Payment Confirmation
             4.3: [('paid', 'PAID'), ('not_paid', 'NOT PAID')],
 
-            # Stage 5: Allocation: Criteria Review (TGL assigns an STA)
             5.0: [('allocated', 'Allocated'), ('not_allocated', 'Not Allocated'), ('request_info', 'Request Info')],
 
-            # Stage 5.1: Review: Application Criteria review
             5.1: [('drafted', 'Drafted'), ('deviate', 'Deviate to R&D')],
 
-            # Stage 6: Peer Review-Criteria Review
             6.0: [('requested', 'Requested')],
 
-            # Stage 6.1: Peer review Committee -Criteria Report
             6.1: [('reviewed', 'Reviewed')],
 
-            # Stage 7: Approval - Application Criteria Report
             7.0: [('approved', 'Approved'), ('rejected', 'Rejected')],
 
-            # Stage 8: Allocation: Preparation: Assessment Work Offer (AWO)
             8.0: [('allocation', 'Allocation')],
 
-            # Stage 8.1: Preparation: Assessment Work Offer (AWO)
             8.1: [('drafted', 'Drafted')],
 
-            # Stage 8.2: Peer Review-Draft Assessment Work Offer (AWO)
             8.2: [('requested', 'Requested')],
 
-            # Stage 8.3: Peer Committee-Draft Assessment Work Offer
             8.3: [('reviewed', 'Reviewed')],
 
-            # Stage 8.4: Review: Approval Submission
             8.4: [('reviewed', 'Reviewed'), ('rejected', 'Rejected')],
 
-            # Stage 9: Approval: Assessment work offer
             9.0: [('approved', 'Approved'), ('rejected', 'Rejected')],
 
-            # Stage 10: Dispatched Assessment work offer
             10.0: [('dispatched', 'Dispatched')],
 
-            # Stage 11: Client Response
             11.0: [('accepted', 'Accepted'), ('rejected', 'Rejected')],
 
-            # Stage 11.1: Review: Client Response
             11.1: [('reviewed', 'Reviewed')],
 
-            # Stage 12: Evaluation Fee Request
             12.0: [('requested', 'Requested')],
 
-            # Stage 13: Evaluation Invoice Generation
             13.0: [('generated', 'Generated'), ('rejected', 'Rejected')],
 
-            # Stage 13.1: Confirmation of Invoice (when confirmed, goes to client)
             13.1: [('confirmed', 'Confirmed')],
 
-            # Stage 13.2: Evaluation fee-Proof of Payment - CLIENT UPLOAD STAGE
             13.2: [],  # Empty - only client uploads can progress this stage
 
-            # Stage 13.3: Payment Confirmation (uploaded POP)
             13.3: [('paid', 'PAID'), ('not_paid', 'NOT PAID')],
 
-            # Stage 14: Project Allocation
             14.0: [('allocated', 'Allocated')],
 
-            # Stage 14.1: Project Assessment
             14.1: [('confirm', 'Confirm'), ('rejected', 'Rejected')],
 
-            # Stage 14.1.1: Draft Project Management Plan
             14.11: [('draft', 'Draft')],
 
-            # Stage 14.1.2: Approved Project Management Plan (PCM)
             14.12: [('upload', 'Upload')],
 
-            # Stage 14.1.3: Review Project Submission
             14.13: [('approved', 'Approved'), ('rejected', 'Rejected')],
 
-            # Stage 15: Peer Review-Draft Certificate
             15.0: [('requested', 'Requested')],
 
-            # Stage 15.1: Peer review Committee -Draft Certificate
             15.1: [('reviewed', 'Reviewed')],
 
-            # Stage 15.2: Final Review: Assessment Management (Technical Exco)
             15.2: [('reviewed', 'Reviewed'), ('rejected', 'Rejected')],
 
-            # Stage 15.3: Review: EMTS
             15.3: [('reviewed', 'Reviewed'), ('rejected', 'Rejected')],
 
-            # Stage 16: TECO Submission
             16.0: [('submitted', 'Submitted')],
 
-            # Stage 16.1: Review: TECO Approval
             16.1: [('reviewed', 'Reviewed')],
 
-            # Stage 17: TECO Approval
             17.0: [('approved', 'Approved'), ('conditionally_approved', 'Conditionally Approved'), ('rejected', 'Rejected')],
 
-            # Stage 17.1: Board Ratification
             17.1: [('submitted', 'Submitted')],
 
-            # Stage 17.2: Review: Board Ratification
             17.2: [('ratified', 'Ratified'), ('not_ratified', 'Not Ratified')],
 
-            # Stage 18: Publish Certificate (Triggered by 17.1 positive outcome)
             18.0: [('submitted', 'Submitted')],
 
-            # Stage 18.1a: Website Upload Request & Gazette
             18.1: [('submitted', 'Submitted'), ('rejected', 'Rejected')],
 
-            # Stage 18.2a: Approval: Publishing Requests
             18.2: [('approved', 'Approved'), ('rejected', 'Rejected')],
 
-            # Stage 19: Certificate Signing (Triggered by 17.1 positive outcome)
             19.0: [('submitted', 'Submitted')],
 
-            # Stage 19.1b: Certificate Signing status
             19.1: [('signed', 'Signed'), ('not_signed', 'Not Signed')],
 
-            # Stage 19.2b: Dispatch signed certificate
             19.2: [('couriered', 'Couriered'), ('collected', 'Collected'), ('digital_copy', 'Digital Copy')],
 
-            # Stage 20: Project Closure
             20.0: [('submitted', 'Submitted')],
 
-            # Stage 20.1: Project Closeout report
             20.1: [('approved', 'Approved'), ('conditionally_approved', 'Conditionally Approved'), ('rejected', 'Rejected')],
 
-            # Stage 20.2: Approve Project Closure
             20.2: [('approved', 'Approved'), ('rejected', 'Rejected')],
 
-            # Final stage - END
             21.0: []  # No actions - final stage
         }
 
@@ -1460,7 +1310,7 @@ class WorkflowService:
 
     def has_sub_stages(self, stage_number):
         """Check if a stage has sub-stages"""
-        # Stages that have sub-stages based on CSV
+
         stages_with_substages = {
             4.0: [4.1, 4.2],
             5.0: [5.1],
@@ -1481,7 +1331,7 @@ class WorkflowService:
 
     def has_multiple_approval_options(self, stage_number):
         """Check if a stage has multiple approval options (Approval2, Approval3)"""
-        # Stages with multiple approval options based on CSV
+
         multiple_approval_stages = {
             2.0, 3.0, 4.0, 5.0, 7.0, 8.3, 8.4, 10.0, 10.1, 12.0, 12.2, 13.1,
             14.3, 15.2, 15.3, 17.0, 17.2, 18.2, 19.1, 20.1, 20.2
@@ -1498,7 +1348,7 @@ class WorkflowService:
 
     def stage_allows_client_upload(self, stage_number):
         """Check if a stage allows optional client document upload (for review responses)"""
-        # Stages where clients might need to upload additional documents when rejected
+
         client_optional_upload_stages = {
             2.0, 3.0, 5.0, 6.0, 7.0, 8.3, 8.4, 10.0, 10.1, 15.2, 15.3, 17.1, 17.2, 18.2, 19.1, 20.2
         }
@@ -1526,7 +1376,7 @@ class WorkflowService:
 
     def get_next_stage_number(self, current_stage_number):
         """Get the next sequential stage number"""
-        # Define the complete stage sequence
+
         stage_sequence = [
             1.0, 2.0, 3.0, 4.0, 4.1, 4.2, 5.0, 5.1, 6.0, 6.1, 7.0,
             8.0, 8.1, 8.2, 8.3, 8.4, 9.0, 10.0, 10.1, 11.0,
@@ -1567,53 +1417,44 @@ class WorkflowService:
         """Implement proper workflow logic based on your detailed workflow specification"""
         current_stage_num = current_stage.stage_number
 
-        # Stage transition rules based on your detailed workflow specification
 
-        # Stage 1: New Application by client - Go to 2
         if current_stage_num == 1.0:
             return Stage.query.filter_by(stage_number=2.0).first()
 
-        # Stage 2: Verification of Application Completeness
         elif current_stage_num == 2.0:
             if action == 'application_complete':
                 return Stage.query.filter_by(stage_number=3.0).first()  # Go to 3
             elif action == 'application_not_complete':
                 return current_stage  # Stay on 2
 
-        # Stage 3: Admin Fee Request
         elif current_stage_num == 3.0:
             if action == 'accepted':
                 return Stage.query.filter_by(stage_number=4.0).first()  # Go to 4
             elif action in ['rejected', 'request_info']:
                 return current_stage  # Stay on 3
 
-        # Stage 4: Admin Invoice Generation
         elif current_stage_num == 4.0:
             if action == 'generated':
                 return Stage.query.filter_by(stage_number=4.1).first()  # Go to 4.1
             elif action == 'rejected':
                 return Stage.query.filter_by(stage_number=3.0).first()  # Go to 3
 
-        # Stage 4.1: Confirmation of Invoice (when confirmed, goes to client)
         elif current_stage_num == 4.1:
             if action == 'confirmed':
                 return Stage.query.filter_by(stage_number=4.2).first()  # Go to 4.2
 
-        # Stage 4.2: Admin fee-Proof of Payment (Client uploads) - CLIENT UPLOAD STAGE
         elif current_stage_num == 4.2:
             if action == 'client_upload_received':
                 return Stage.query.filter_by(stage_number=4.3).first()  # Go to 4.3
             else:
                 return current_stage  # Stay here until client uploads
 
-        # Stage 4.3: Payment Confirmation
         elif current_stage_num == 4.3:
             if action == 'paid':
                 return Stage.query.filter_by(stage_number=5.0).first()  # Go to 5
             elif action == 'not_paid':
                 return Stage.query.filter_by(stage_number=4.2).first()  # Go to 4.2
 
-        # Stage 5: Allocation: Criteria Review (TGL assigns an STA)
         elif current_stage_num == 5.0:
             if action == 'allocated':
                 return Stage.query.filter_by(stage_number=5.1).first()  # Go to 5.1
@@ -1622,178 +1463,148 @@ class WorkflowService:
             elif action == 'request_info':
                 return Stage.query.filter_by(stage_number=3.0).first()  # Stay on 3
 
-        # Stage 5.1: Review: Application Criteria review
         elif current_stage_num == 5.1:
             if action == 'drafted':
                 return Stage.query.filter_by(stage_number=6.0).first()  # Go to 6
             elif action == 'deviate':
-                # Deviate to R&D - for now, stay on current stage
+
                 return current_stage
 
-        # Stage 6: Peer Review-Criteria Review
         elif current_stage_num == 6.0:
             if action == 'requested':
                 return Stage.query.filter_by(stage_number=6.1).first()  # Go to 6.1
 
-        # Stage 6.1: Peer review Committee -Criteria Report
         elif current_stage_num == 6.1:
             if action == 'reviewed':
                 return Stage.query.filter_by(stage_number=7.0).first()  # Go to 7
 
-        # Stage 7: Approval - Application Criteria Report
         elif current_stage_num == 7.0:
             if action == 'approved':
                 return Stage.query.filter_by(stage_number=8.0).first()  # Go to 8
             elif action == 'rejected':
                 return current_stage  # Stay on 7
 
-        # Stage 8: Allocation: Preparation: Assessment Work Offer (AWO)
         elif current_stage_num == 8.0:
             if action == 'allocation':
                 return Stage.query.filter_by(stage_number=8.1).first()  # Go to 8.1
 
-        # Stage 8.1: Preparation: Assessment Work Offer (AWO)
         elif current_stage_num == 8.1:
             if action == 'drafted':
                 return Stage.query.filter_by(stage_number=8.2).first()  # Go to 8.2
 
-        # Stage 8.2: Peer Review-Draft Assessment Work Offer (AWO)
         elif current_stage_num == 8.2:
             if action == 'requested':
                 return Stage.query.filter_by(stage_number=8.3).first()  # Go to 8.3
 
-        # Stage 8.3: Peer Committee-Draft Assessment Work Offer
         elif current_stage_num == 8.3:
             if action == 'reviewed':
                 return Stage.query.filter_by(stage_number=8.4).first()  # Go to 8.4
 
-        # Stage 8.4: Review: Approval Submission
         elif current_stage_num == 8.4:
             if action == 'reviewed':
                 return Stage.query.filter_by(stage_number=9.0).first()  # Go to 9
             elif action == 'rejected':
                 return Stage.query.filter_by(stage_number=8.3).first()  # Stay on 8.3
 
-        # Stage 9: Approval: Assessment work offer
         elif current_stage_num == 9.0:
             if action == 'approved':
                 return Stage.query.filter_by(stage_number=10.0).first()  # Go to 10
             elif action == 'rejected':
                 return Stage.query.filter_by(stage_number=8.4).first()  # Stay on 8.4
 
-        # Stage 10: Dispatched Assessment work offer
         elif current_stage_num == 10.0:
             if action == 'dispatched':
                 return Stage.query.filter_by(stage_number=11.0).first()  # Go to 11
 
-        # Stage 11: Client Response
         elif current_stage_num == 11.0:
             if action == 'accepted':
                 return Stage.query.filter_by(stage_number=11.1).first()  # Go to 11.1
             elif action == 'rejected':
                 return Stage.query.filter_by(stage_number=10.0).first()  # Stay on 10
 
-        # Stage 11.1: Review: Client Response
         elif current_stage_num == 11.1:
             if action == 'reviewed':
                 return Stage.query.filter_by(stage_number=12.0).first()  # Go to 12
 
-        # Stage 12: Evaluation Fee Request
         elif current_stage_num == 12.0:
             if action == 'requested':
                 return Stage.query.filter_by(stage_number=13.0).first()  # Go to 13
 
-        # Stage 13: Evaluation Invoice Generation
         elif current_stage_num == 13.0:
             if action == 'generated':
                 return Stage.query.filter_by(stage_number=13.1).first()  # Go to 13.1
             elif action == 'rejected':
                 return current_stage  # Stay on 13
 
-        # Stage 13.1: Confirmation of Invoice (when confirmed, goes to client)
         elif current_stage_num == 13.1:
             if action == 'confirmed':
                 return Stage.query.filter_by(stage_number=13.2).first()  # Go to 13.2
 
-        # Stage 13.2: Evaluation fee-Proof of Payment - CLIENT UPLOAD STAGE
         elif current_stage_num == 13.2:
             if action == 'client_upload_received':
                 return Stage.query.filter_by(stage_number=13.3).first()  # Go to 13.3
             else:
                 return current_stage  # Stay here until client uploads
 
-        # Stage 13.3: Payment Confirmation (uploaded POP)
         elif current_stage_num == 13.3:
             if action == 'paid':
                 return Stage.query.filter_by(stage_number=14.0).first()  # Go to 14
             elif action == 'not_paid':
                 return Stage.query.filter_by(stage_number=13.2).first()  # Stay on 13.2
 
-        # Stage 14: Project Allocation
         elif current_stage_num == 14.0:
             if action == 'allocated':
-                # Allocation triggers both 14.1 and 14.1.1 - go to 14.1 first
+
                 return Stage.query.filter_by(stage_number=14.1).first()  # Go to 14.1 and 14.1.1
 
-        # Stage 14.1: Project Assessment
         elif current_stage_num == 14.1:
             if action == 'confirm':
                 return Stage.query.filter_by(stage_number=14.11).first()  # Go to 14.1.1 (covers 14.1.1-14.1.1.2)
             elif action == 'rejected':
                 return Stage.query.filter_by(stage_number=14.0).first()  # Stay on 14
 
-        # Stage 14.1.1: Draft Project Management Plan
         elif current_stage_num == 14.11:
             if action == 'draft':
                 return Stage.query.filter_by(stage_number=14.12).first()  # Go to 14.1.2
 
-        # Stage 14.1.2: Approved Project Management Plan (PCM)
         elif current_stage_num == 14.12:
             if action == 'upload':
                 return Stage.query.filter_by(stage_number=15.0).first()  # Go to 15
 
-        # Stage 14.1.3: Review Project Submission
         elif current_stage_num == 14.13:
             if action == 'approved':
                 return Stage.query.filter_by(stage_number=15.0).first()  # Go to 15
             elif action == 'rejected':
                 return current_stage  # Stay on 14.1.3
 
-        # Stage 15: Peer Review-Draft Certificate
         elif current_stage_num == 15.0:
             if action == 'requested':
                 return Stage.query.filter_by(stage_number=15.1).first()  # Go to 15.1
 
-        # Stage 15.1: Peer review Committee -Draft Certificate
         elif current_stage_num == 15.1:
             if action == 'reviewed':
                 return Stage.query.filter_by(stage_number=15.2).first()  # Go to 15.2
 
-        # Stage 15.2: Final Review: Assessment Management (Technical Exco)
         elif current_stage_num == 15.2:
             if action == 'reviewed':
                 return Stage.query.filter_by(stage_number=15.3).first()  # Go to 15.3
             elif action == 'rejected':
                 return current_stage  # Stay on 15.2
 
-        # Stage 15.3: Review: EMTS
         elif current_stage_num == 15.3:
             if action == 'reviewed':
                 return Stage.query.filter_by(stage_number=16.0).first()  # Go to 16
             elif action == 'rejected':
                 return current_stage  # Stay on 15.3
 
-        # Stage 16: TECO Submission
         elif current_stage_num == 16.0:
             if action == 'submitted':
                 return Stage.query.filter_by(stage_number=16.1).first()  # Go to 16.1
 
-        # Stage 16.1: Review: TECO Approval
         elif current_stage_num == 16.1:
             if action == 'reviewed':
                 return Stage.query.filter_by(stage_number=17.0).first()  # Go to 17
 
-        # Stage 17: TECO Approval
         elif current_stage_num == 17.0:
             if action == 'approved':
                 return Stage.query.filter_by(stage_number=17.1).first()  # Go to 17.1
@@ -1802,81 +1613,68 @@ class WorkflowService:
             elif action == 'rejected':
                 return current_stage  # Stay on 17
 
-        # Stage 17.1: Board Ratification
         elif current_stage_num == 17.1:
             if action == 'submitted':
                 return Stage.query.filter_by(stage_number=17.2).first()  # Go to 17.2
 
-        # Stage 17.2: Review: Board Ratification
         elif current_stage_num == 17.2:
             if action == 'ratified':
-                # Ratified triggers both 18 and 19 - go to 18 first
+
                 return Stage.query.filter_by(stage_number=18.0).first()  # Go to 18
             elif action == 'not_ratified':
                 return current_stage  # Stay on 17.2
 
-        # Stage 18: Publish Certificate (Triggered by 17.1 positive outcome)
         elif current_stage_num == 18.0:
             if action == 'submitted':
                 return Stage.query.filter_by(stage_number=18.1).first()  # Go to 18.1a
 
-        # Stage 18.1a: Website Upload Request & Gazette
         elif current_stage_num == 18.1:
             if action == 'submitted':
                 return Stage.query.filter_by(stage_number=18.2).first()  # Go to 18.2a
             elif action == 'rejected':
                 return current_stage  # Stay on 18.1a
 
-        # Stage 18.2a: Approval: Publishing Requests
         elif current_stage_num == 18.2:
             if action == 'approved':
                 return Stage.query.filter_by(stage_number=19.1).first()  # Go to 19.1b
             elif action == 'rejected':
                 return current_stage  # Stay on 18.2a
 
-        # Stage 19: Certificate Signing (Triggered by 17.1 positive outcome)
         elif current_stage_num == 19.0:
             if action == 'submitted':
                 return Stage.query.filter_by(stage_number=19.2).first()  # Go to 19.2b
 
-        # Stage 19.1b: Certificate Signing status
         elif current_stage_num == 19.1:
             if action == 'signed':
                 return Stage.query.filter_by(stage_number=19.2).first()  # Go to 19.2b
             elif action == 'not_signed':
                 return current_stage  # Stay on 19.1b
 
-        # Stage 19.2b: Dispatch signed certificate
         elif current_stage_num == 19.2:
             if action in ['couriered', 'collected', 'digital_copy']:
                 return Stage.query.filter_by(stage_number=20.0).first()  # Go to 20
 
-        # Stage 20: Project Closure
         elif current_stage_num == 20.0:
             if action == 'submitted':
                 return Stage.query.filter_by(stage_number=20.1).first()  # Go to 20.1
 
-        # Stage 20.1: Project Closeout report
         elif current_stage_num == 20.1:
             if action in ['approved', 'conditionally_approved']:
                 return Stage.query.filter_by(stage_number=20.2).first()  # Go to 20.2
             elif action == 'rejected':
                 return Stage.query.filter_by(stage_number=20.0).first()  # Stay on 20
 
-        # Stage 20.2: Approve Project Closure
         elif current_stage_num == 20.2:
             if action == 'approved':
-                # This is the final stage - application is completed
-                # Certificate generation will be triggered by the completion status
+
+
                 return current_stage  # Stay on 20.2 but mark as completed
             elif action == 'rejected':
                 return current_stage  # Stay on 20.2
 
-        # Final stage - END
         elif current_stage_num == 21.0:
             return current_stage  # Already at final stage
 
-        # Fallback: stay at current stage
         return current_stage
 
     def move_application(self, application, action, reason=None, user_id=None):
@@ -1887,17 +1685,15 @@ class WorkflowService:
             current_stage = application.current_stage
             next_stage = self.get_next_stage(current_stage, action)
 
-            # Special handling for final stage completion
             if current_stage.stage_number == 20.2 and action == 'approved':
-                # Move to final completion stage
+
                 final_stage = Stage.query.filter_by(stage_number=23.0).first()
                 if final_stage:
-                    # Update application to final stage
+
                     application.current_stage_id = final_stage.id
                     application.status = 'Completed'
                     application.last_updated = datetime.utcnow()
 
-                    # Create history record for completion
                     history = ApplicationHistory(
                         application_id=application.id,
                         from_stage_id=current_stage.id,
@@ -1911,7 +1707,6 @@ class WorkflowService:
                     db.session.commit()
                     logger.info('Application moved to final stage - ready for certificate generation')
 
-                    # Send completion notifications
                     self.email_service.send_stage_notification(
                         application=application,
                         action='completed',
@@ -1943,12 +1738,10 @@ class WorkflowService:
 
             logger.info(f'Moving from stage {current_stage.stage_number} ({current_stage.name}) to stage {next_stage.stage_number} ({next_stage.name})')
 
-            # Update application
             old_stage = application.current_stage
             application.current_stage_id = next_stage.id
             application.last_updated = datetime.utcnow()
 
-            # Update status based on stage
             if next_stage.stage_number >= 23.0:
                 application.status = 'Completed'
             elif next_stage.is_review_stage:
@@ -1960,7 +1753,6 @@ class WorkflowService:
 
             logger.info(f'Updated application status to: {application.status}')
 
-            # Create history record
             history = ApplicationHistory(
                 application_id=application.id,
                 from_stage_id=old_stage.id,
@@ -1974,7 +1766,6 @@ class WorkflowService:
             db.session.commit()
             logger.info('Database updated successfully')
 
-            # Send notifications
             notification_type = 'review' if next_stage.is_review_stage else 'approved'
             logger.info(f'Sending notifications with type: {notification_type}')
 
@@ -2010,18 +1801,16 @@ class WorkflowService:
         try:
             current_stage = application.current_stage
 
-            # Only auto-progress from client upload stages
             if current_stage.stage_number in [4.2, 13.2]:  # Updated stage numbers
                 next_stage = self.get_next_stage(current_stage, 'client_upload_received')
 
                 if next_stage and next_stage.id != current_stage.id:
-                    # Update application
+
                     old_stage = application.current_stage
                     application.current_stage_id = next_stage.id
                     application.last_updated = datetime.utcnow()
                     application.status = 'In Progress'
 
-                    # Create history record
                     history = ApplicationHistory(
                         application_id=application.id,
                         from_stage_id=old_stage.id,
@@ -2034,7 +1823,6 @@ class WorkflowService:
                     db.session.add(history)
                     db.session.commit()
 
-                    # Notify assigned groups that documents are ready for verification
                     self.email_service.send_stage_notification(
                         application=application,
                         action='client_upload_received',
@@ -2052,11 +1840,9 @@ class WorkflowService:
             logger.error(f'Client upload progression error: {e}')
             return False
 
-# CertificateService class removed - certificates will be uploaded manually via the certificates page
 
-# =============================================================================
-# ROUTES - AUTHENTICATION
-# =============================================================================
+
+
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -2096,27 +1882,24 @@ def logout():
     flash('You have been logged out.', 'info')
     return redirect(url_for('login'))
 
-# =============================================================================
-# ROUTES - MAIN APPLICATION
-# =============================================================================
+
+
 
 @app.route('/')
 @login_required
 def index():
     """Dashboard with application statistics"""
     try:
-        # Get statistics
+
         total_applications = Application.query.count()
         pending_applications = Application.query.filter(
             Application.status.in_(['Submitted', 'In Progress'])
         ).count()
 
-        # Recent applications
         recent_applications = Application.query.order_by(
             Application.submitted_at.desc()
         ).limit(5).all()
 
-        # Applications by stage
         stage_stats = db.session.query(
             Stage.name,
             db.func.count(Application.id).label('count')
@@ -2141,10 +1924,8 @@ def applications():
         page = request.args.get('page', 1, type=int)
         per_page = 20
 
-        # Base query
         query = Application.query
 
-        # Apply filters
         status_filter = request.args.get('status')
         if status_filter:
             query = query.filter(Application.status == status_filter)
@@ -2163,12 +1944,10 @@ def applications():
                 )
             )
 
-        # Paginate results
         applications = query.order_by(Application.submitted_at.desc()).paginate(
             page=page, per_page=per_page, error_out=False
         )
 
-        # Get all stages for filter dropdown
         stages = Stage.query.filter_by(is_active=True).order_by(Stage.stage_number).all()
 
         return render_template('main/applications.html',
@@ -2187,19 +1966,15 @@ def application_detail(id):
     try:
         application = Application.query.get_or_404(id)
 
-        # Get application documents
         documents = Document.query.filter_by(application_id=application.id).all()
 
-        # Get application history
         history = ApplicationHistory.query.filter_by(
             application_id=application.id
         ).order_by(ApplicationHistory.created_at.desc()).all()
 
-        # Get workflow actions
         workflow_service = WorkflowService()
         available_actions = workflow_service.get_available_actions(application.current_stage)
 
-        # Get certificates
         certificates = Certificate.query.filter_by(application_id=application.id).all()
 
         return render_template('main/application_detail.html',
@@ -2228,7 +2003,6 @@ def process_application(id):
             flash('Please select an action.', 'error')
             return redirect(url_for('application_detail', id=id))
 
-        # Process workflow
         workflow_service = WorkflowService()
         result = workflow_service.move_application(
             application=application,
@@ -2240,7 +2014,6 @@ def process_application(id):
         if result['success']:
             flash(result['message'], 'success')
 
-            # Log the action
             AuditLog.create_log(
                 user_id=current_user.id,
                 action=f'Application processed: {action}',
@@ -2291,7 +2064,6 @@ def upload_document(id):
         if result['success']:
             flash(result['message'], 'success')
 
-            # Log the upload
             AuditLog.create_log(
                 user_id=current_user.id,
                 action='Document uploaded',
@@ -2324,7 +2096,6 @@ def download_document(id):
             flash('File not found.', 'error')
             return redirect(request.referrer or url_for('applications'))
 
-        # Log the download
         AuditLog.create_log(
             user_id=current_user.id,
             action='Document downloaded',
@@ -2354,18 +2125,15 @@ def create_certificate_record(id):
     try:
         application = Application.query.get_or_404(id)
 
-        # Check if application is completed
         if application.status != 'Completed':
             flash('Certificate can only be created for completed applications.', 'error')
             return redirect(url_for('application_detail', id=id))
 
-        # Check if certificate already exists
         existing_cert = Certificate.query.filter_by(application_id=application.id).first()
         if existing_cert:
             flash('Certificate already exists for this application.', 'warning')
             return redirect(url_for('application_detail', id=id))
 
-        # Create certificate record
         certificate = Certificate(
             application_id=application.id,
             issued_date=date.today(),
@@ -2378,7 +2146,6 @@ def create_certificate_record(id):
         db.session.add(certificate)
         db.session.commit()
 
-        # Log certificate creation
         AuditLog.create_log(
             user_id=current_user.id,
             action='Certificate record created',
@@ -2398,9 +2165,8 @@ def create_certificate_record(id):
         flash('Error creating certificate record.', 'error')
         return redirect(url_for('application_detail', id=id))
 
-# =============================================================================
-# ROUTES - EXTERNAL APPLICATION SUBMISSION
-# =============================================================================
+
+
 
 @app.route('/apply')
 def apply():
@@ -2411,18 +2177,16 @@ def apply():
 def submit_application():
     """Handle external application submission"""
     try:
-        # Get form data
+
         data = request.form.to_dict()
         files = request.files
 
-        # Validate required fields
         required_fields = ['first_name', 'last_name', 'company_name', 'applicant_email', 'applicant_phone']
         for field in required_fields:
             if not data.get(field):
                 flash(f'Please fill in the {field.replace("_", " ").title()} field.', 'error')
                 return render_template('external/apply.html')
 
-        # Create or get company
         company = Company.query.filter_by(name=data['company_name']).first()
         if not company:
             company = Company(
@@ -2437,13 +2201,11 @@ def submit_application():
             db.session.add(company)
             db.session.flush()
 
-        # Get first stage
         first_stage = Stage.query.filter_by(stage_number=1.0).first()
         if not first_stage:
             flash('System error: No initial stage found.', 'error')
             return render_template('external/apply.html')
 
-        # Create application
         application = Application(
             applicant_name=f"{data['first_name']} {data['last_name']}",
             applicant_email=data['applicant_email'],
@@ -2458,7 +2220,6 @@ def submit_application():
         db.session.add(application)
         db.session.flush()
 
-        # Handle file uploads
         uploaded_files = []
         if 'supporting_documents' in files:
             file_list = files.getlist('supporting_documents')
@@ -2477,7 +2238,6 @@ def submit_application():
                     else:
                         logger.warning(f"File upload failed: {result['message']}")
 
-        # Create audit log for application submission
         AuditLog.create_log(
             user_id=None,  # External submission
             action='External application submitted',
@@ -2493,16 +2253,14 @@ def submit_application():
 
         db.session.commit()
 
-        # Send confirmation email
         try:
             email_service = EmailService()
             email_service.send_application_confirmation(application, uploaded_files)
         except Exception as e:
             logger.error(f"Failed to send confirmation email: {e}")
 
-        # Send notification to review team
         try:
-            # Get the TAO group (first stage group)
+
             stage_groups = StageGroupAssignment.query.filter_by(stage_id=first_stage.id).all()
             for stage_group in stage_groups:
                 email_service.send_new_application_notification(application, stage_group.group)
@@ -2534,12 +2292,10 @@ def view_application_status(application_number):
             flash('Application not found. Please check your application number.', 'error')
             return render_template('external/status_check.html')
 
-        # Get application history
         history = ApplicationHistory.query.filter_by(
             application_id=application.id
         ).order_by(ApplicationHistory.created_at.desc()).limit(10).all()
 
-        # Get application documents
         documents = Document.query.filter_by(application_id=application.id).all()
 
         return render_template('external/status.html',
@@ -2568,7 +2324,6 @@ def check_application_status():
             flash('Application not found. Please check your application number.', 'error')
             return render_template('external/status_check.html')
 
-        # Redirect to the status page with application number in URL
         return redirect(url_for('view_application_status', application_number=application.application_number))
 
     except Exception as e:
@@ -2608,7 +2363,7 @@ def upload_missing_document(application_number):
         )
 
         if result['success']:
-            # Log the upload
+
             AuditLog.create_log(
                 user_id=None,  # External upload
                 action='Missing document uploaded from status page',
@@ -2622,7 +2377,6 @@ def upload_missing_document(application_number):
                 }
             )
 
-            # Notify assigned groups about new documents
             try:
                 email_service = EmailService()
                 stage_groups = email_service.get_stage_groups(application.current_stage_id)
@@ -2669,7 +2423,6 @@ def upload_missing_document(application_number):
         else:
             flash(result['message'], 'error')
 
-        # Redirect back to the application status page
         return redirect(url_for('view_application_status', application_number=application.application_number))
 
     except Exception as e:
@@ -2677,9 +2430,8 @@ def upload_missing_document(application_number):
         flash('Error uploading document.', 'error')
         return redirect(url_for('status_check_form'))
 
-# =============================================================================
-# ROUTES - CLIENT UPLOADS
-# =============================================================================
+
+
 
 @app.route('/client/upload/<application_number>/<token>')
 def client_upload_form(application_number, token):
@@ -2690,7 +2442,6 @@ def client_upload_form(application_number, token):
             flash('Invalid or expired upload link. Please contact us for assistance.', 'error')
             return render_template('external/error.html')
 
-        # Check what type of upload is required
         workflow_service = WorkflowService()
         current_stage = application.current_stage
         requires_upload = workflow_service.stage_requires_client_upload(current_stage.stage_number)
@@ -2700,7 +2451,6 @@ def client_upload_form(application_number, token):
             flash('Document upload is not available for this application stage.', 'error')
             return render_template('external/error.html')
 
-        # Determine upload type based on stage
         upload_type = "general"
         upload_title = "Upload Documents"
         upload_description = "Upload additional documents for your application"
@@ -2763,7 +2513,7 @@ def client_upload_submit(application_number, token):
                     flash(result['message'], 'warning')
 
         if uploaded_files:
-            # Log the client upload
+
             AuditLog.create_log(
                 user_id=None,  # Client upload
                 action='Client document upload',
@@ -2777,12 +2527,11 @@ def client_upload_submit(application_number, token):
                 }
             )
 
-            # Auto-progress application if this is a client upload stage
             workflow_service = WorkflowService()
             auto_progressed = workflow_service.handle_client_upload(application)
 
             if not auto_progressed:
-                # If not auto-progressed, notify assigned groups about new documents
+
                 try:
                     email_service = EmailService()
                     stage_groups = email_service.get_stage_groups(application.current_stage_id)
@@ -2841,9 +2590,8 @@ def client_upload_submit(application_number, token):
         flash('Error uploading documents.', 'error')
         return render_template('external/error.html')
 
-# =============================================================================
-# ROUTES - EXTERNAL UPLOAD
-# =============================================================================
+
+
 
 @app.route('/external/apply')
 def external_apply():
@@ -2904,7 +2652,7 @@ def external_upload_submit(token):
                     flash(result['message'], 'warning')
 
         if uploaded_files:
-            # Log the external upload
+
             AuditLog.create_log(
                 user_id=None,  # External upload
                 action='External document upload',
@@ -2917,7 +2665,6 @@ def external_upload_submit(token):
                 }
             )
 
-            # Notify assigned groups about new documents
             try:
                 email_service = EmailService()
                 stage_groups = email_service.get_stage_groups(application.current_stage_id)
@@ -2975,9 +2722,8 @@ def external_upload_submit(token):
         flash('Error uploading documents.', 'error')
         return render_template('external/error.html')
 
-# =============================================================================
-# ROUTES - CERTIFICATE MANAGEMENT
-# =============================================================================
+
+
 
 @app.route('/certificates')
 @login_required
@@ -2987,12 +2733,10 @@ def certificates():
         page = request.args.get('page', 1, type=int)
         per_page = 20
 
-        # Base query - only show certificates for completed applications
         query = Certificate.query.join(Application).filter(
             Application.status == 'Completed'
         )
 
-        # Apply filters
         status_filter = request.args.get('status')
         if status_filter and status_filter != 'All':
             query = query.filter(Certificate.status == status_filter)
@@ -3008,12 +2752,10 @@ def certificates():
                 )
             )
 
-        # Paginate results
         certificates = query.order_by(Certificate.created_at.desc()).paginate(
             page=page, per_page=per_page, error_out=False
         )
 
-        # Get status counts for filter tabs
         status_counts = {
             'All': Certificate.query.join(Application).filter(Application.status == 'Completed').count(),
             'Active': Certificate.query.join(Application).filter(Application.status == 'Completed', Certificate.status == 'Active').count(),
@@ -3040,7 +2782,6 @@ def certificate_detail(id):
     try:
         certificate = Certificate.query.get_or_404(id)
 
-        # Get certificate status history
         status_history = CertificateStatusHistory.query.filter_by(
             certificate_id=certificate.id
         ).order_by(CertificateStatusHistory.changed_at.desc()).all()
@@ -3071,30 +2812,24 @@ def upload_certificate_file(id):
             flash('No file selected.', 'error')
             return redirect(url_for('certificate_detail', id=id))
 
-        # Validate file type (PDF only)
         if not file.filename.lower().endswith('.pdf'):
             flash('Only PDF files are allowed.', 'error')
             return redirect(url_for('certificate_detail', id=id))
 
-        # Generate secure filename
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         filename = f"{certificate.certificate_number}_{timestamp}.pdf"
 
-        # Create directory if not exists
         cert_folder = os.path.join(app.config['UPLOAD_FOLDER'], 'certificates')
         os.makedirs(cert_folder, exist_ok=True)
 
-        # Save file
         file_path = os.path.join(cert_folder, filename)
         file.save(file_path)
 
-        # Update certificate record
         old_status = certificate.status
         certificate.certificate_file = filename
         certificate.status = 'Active'  # Set to Active when uploaded
         certificate.last_updated = datetime.utcnow()
 
-        # Create status history if status changed
         if old_status != 'Active':
             status_history = CertificateStatusHistory(
                 certificate_id=certificate.id,
@@ -3107,7 +2842,6 @@ def upload_certificate_file(id):
 
         db.session.commit()
 
-        # Log the action
         AuditLog.create_log(
             user_id=current_user.id,
             action='Certificate file uploaded',
@@ -3146,7 +2880,6 @@ def update_certificate_status(id):
             flash('Please provide a reason for the status change.', 'error')
             return redirect(url_for('certificate_detail', id=id))
 
-        # Valid statuses
         valid_statuses = ['Active', 'InActive', 'Withdrawn', 'Suspended', 'Cancelled']
         if new_status not in valid_statuses:
             flash('Invalid status selected.', 'error')
@@ -3158,11 +2891,9 @@ def update_certificate_status(id):
             flash('Certificate is already in this status.', 'warning')
             return redirect(url_for('certificate_detail', id=id))
 
-        # Update certificate status
         certificate.status = new_status
         certificate.last_updated = datetime.utcnow()
 
-        # Create status history
         status_history = CertificateStatusHistory(
             certificate_id=certificate.id,
             old_status=old_status,
@@ -3174,7 +2905,6 @@ def update_certificate_status(id):
         db.session.add(status_history)
         db.session.commit()
 
-        # Log the action
         AuditLog.create_log(
             user_id=current_user.id,
             action=f'Certificate status changed from {old_status} to {new_status}',
@@ -3188,7 +2918,6 @@ def update_certificate_status(id):
             }
         )
 
-        # Send notification email to applicant about status change
         try:
             email_service = EmailService()
             subject = f'Certificate Status Update - {certificate.certificate_number}'
@@ -3246,7 +2975,6 @@ def download_certificate(id):
             flash('Certificate file not found.', 'error')
             return redirect(request.referrer or url_for('certificates'))
 
-        # Log the download
         AuditLog.create_log(
             user_id=current_user.id,
             action='Certificate downloaded',
@@ -3269,21 +2997,19 @@ def download_certificate(id):
         flash('Error downloading certificate.', 'error')
         return redirect(request.referrer or url_for('certificates'))
 
-# =============================================================================
-# ROUTES - ADMIN PANEL
-# =============================================================================
+
+
 
 @app.route('/admin')
 @admin_required
 def admin_dashboard():
     """Administrator dashboard"""
     try:
-        # Get statistics
+
         total_users = User.query.count()
         total_groups = Group.query.count()
         total_stages = Stage.query.count()
 
-        # Recent audit logs
         recent_logs = AuditLog.query.order_by(AuditLog.created_at.desc()).limit(10).all()
 
         return render_template('admin/dashboard.html',
@@ -3304,7 +3030,6 @@ def admin_users():
     try:
         users = User.query.filter_by(is_internal=True).order_by(User.created_at.desc()).all()
 
-        # Get group assignments for each user
         user_groups = {}
         for user in users:
             assignments = UserGroupAssignment.query.filter_by(user_id=user.id).all()
@@ -3325,14 +3050,13 @@ def create_user():
     """Admin creates new internal user"""
     if request.method == 'POST':
         try:
-            # Get form data
+
             username = request.form['username']
             email = request.form['email']
             first_name = request.form['first_name']
             last_name = request.form['last_name']
             password = request.form['password']
 
-            # Check if user already exists
             existing_user = User.query.filter(
                 db.or_(User.username == username, User.email == email)
             ).first()
@@ -3341,7 +3065,6 @@ def create_user():
                 flash('User with this username or email already exists.', 'error')
                 return render_template('admin/create_user.html')
 
-            # Create user
             user = User(
                 username=username,
                 email=email,
@@ -3355,7 +3078,6 @@ def create_user():
             db.session.add(user)
             db.session.commit()
 
-            # Log the action
             AuditLog.create_log(
                 user_id=current_user.id,
                 action='User created',
@@ -3386,13 +3108,11 @@ def manage_user_groups(user_id):
 
     if request.method == 'POST':
         try:
-            # Get selected groups from form
+
             selected_group_ids = request.form.getlist('groups')
 
-            # Remove all existing assignments
             UserGroupAssignment.query.filter_by(user_id=user_id).delete()
 
-            # Add new assignments
             for group_id in selected_group_ids:
                 assignment = UserGroupAssignment(
                     user_id=user_id,
@@ -3403,7 +3123,6 @@ def manage_user_groups(user_id):
 
             db.session.commit()
 
-            # Log the action
             group_names = [Group.query.get(int(gid)).name for gid in selected_group_ids]
             AuditLog.create_log(
                 user_id=current_user.id,
@@ -3424,7 +3143,6 @@ def manage_user_groups(user_id):
             logger.error(f'Update user groups error: {e}')
             flash(f'Error updating groups: {str(e)}', 'error')
 
-    # GET request - show form
     all_groups = Group.query.filter_by(is_active=True).all()
     current_assignments = UserGroupAssignment.query.filter_by(user_id=user_id).all()
     current_group_ids = [assignment.group_id for assignment in current_assignments]
@@ -3448,7 +3166,6 @@ def deactivate_user(user_id):
         user.is_active = False
         db.session.commit()
 
-        # Log the action
         AuditLog.create_log(
             user_id=current_user.id,
             action='User deactivated',
@@ -3478,7 +3195,6 @@ def activate_user(user_id):
         user.is_active = True
         db.session.commit()
 
-        # Log the action
         AuditLog.create_log(
             user_id=current_user.id,
             action='User activated',
@@ -3541,7 +3257,6 @@ def admin_setup():
 def create_stage_group_assignments():
     """Assign groups to stages based on exact workflow specification"""
 
-    # Stage assignments based on your detailed workflow specification
     stage_assignments = {
         1.0: ['TAO'],  # New Application by client - TAO processes
         2.0: ['TAO'],  # Verification of Application Completeness - TAO processes
@@ -3604,7 +3319,7 @@ def create_stage_group_assignments():
                 for group_name in group_names:
                     group = Group.query.filter_by(name=group_name).first()
                     if group:
-                        # Check if assignment already exists
+
                         existing = StageGroupAssignment.query.filter_by(
                             stage_id=stage.id,
                             group_id=group.id
@@ -3628,7 +3343,7 @@ def create_stage_group_assignments():
 def create_initial_data():
     """Create initial system data with updated groups"""
     try:
-        # Create admin user if not exists
+
         admin_user = User.query.filter_by(username='admin').first()
         if not admin_user:
             admin_user = User(
@@ -3661,7 +3376,7 @@ def create_initial_data():
             ('Technical Services', 'Technical Services Department'),
             ('Drawing Office', 'Drawing Office Team'),
             ('TA', 'Technical Assessor'),
-            # Additional groups needed for your workflow specification
+
             ('TAO Group', 'Technical Assessment Office Group'),
             ('Finance Group', 'Finance Department Group'),
             ('TGL: TA Group', 'Technical Group Leader: Technical Assessment Group'),
@@ -3682,7 +3397,6 @@ def create_initial_data():
 
         db.session.flush()
 
-        # Assign admin to administrators group
         admin_group = Group.query.filter_by(name='Administrators').first()
         assignment = UserGroupAssignment.query.filter_by(
             user_id=admin_user.id, group_id=admin_group.id
@@ -3695,7 +3409,6 @@ def create_initial_data():
             )
             db.session.add(assignment)
 
-        # Create users
         users_data = [
             ('TAO', 'Thabang', 'Motlanthe', 'Tmotlanthe@agrement.co.za'),
             ('TAO', 'Kamogelo', 'Makutu', 'Kmakutu@agrement.co.za'),
@@ -3743,7 +3456,6 @@ def create_initial_data():
                     )
                     db.session.add(assignment)
 
-        # Workflow stages
         stages_data = [
             (1.0, 'New Application', False, 'Initial application submission received'),
             (2.0, 'Verification of Application Completeness', False, 'Initial completeness review'),
@@ -3807,10 +3519,8 @@ def create_initial_data():
 
         db.session.commit()
 
-        # Stage group assignment
         create_stage_group_assignments()
 
-        # Notification signature
         signature = NotificationSignature.query.filter_by(is_active=True).first()
         if not signature:
             signature = NotificationSignature(
@@ -3826,7 +3536,6 @@ def create_initial_data():
 
         db.session.commit()
 
-        # Update existing certificates
         certificates_without_status = Certificate.query.filter_by(status=None).all()
         for cert in certificates_without_status:
             cert.status = 'Active'
@@ -3845,7 +3554,7 @@ def create_initial_data():
 def create_sample_applications():
     """Create sample applications for testing"""
     try:
-        # Create sample company
+
         company = Company.query.filter_by(name='Sample Corporation Ltd').first()
         if not company:
             company = Company(
@@ -3860,11 +3569,10 @@ def create_sample_applications():
             db.session.add(company)
             db.session.flush()
 
-        # Get first stage
         first_stage = Stage.query.filter_by(stage_number=1.0).first()
 
         if first_stage:
-            # Create sample applications
+
             sample_apps = [
                 {
                     'applicant_name': 'John Smith',
@@ -3887,7 +3595,7 @@ def create_sample_applications():
             ]
 
             for app_data in sample_apps:
-                # Check if application already exists
+
                 existing = Application.query.filter_by(
                     applicant_email=app_data['applicant_email']
                 ).first()
@@ -3916,13 +3624,11 @@ def create_sample_applications():
 def reset_database():
     """Reset database - USE WITH CAUTION"""
     try:
-        # Drop all tables
+
         db.drop_all()
 
-        # Create all tables
         db.create_all()
 
-        # Create initial data
         create_initial_data()
 
         logger.info('Database reset successfully')
@@ -3931,9 +3637,8 @@ def reset_database():
         logger.error(f'Error resetting database: {e}')
         raise
 
-# =============================================================================
-# APPLICATION STARTUP
-# =============================================================================
+
+
 
 if __name__ == '__main__':
     with app.app_context():
@@ -3943,6 +3648,5 @@ if __name__ == '__main__':
         except Exception as e:
             logger.error(f'Startup error: {e}')
 
-    # Use the PORT Render provides, fallback to 5000 for local testing
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port, use_reloader=False)
